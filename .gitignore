@@ -1,0 +1,8 @@
+server/target/
+data
+.venv
+.env.local
+
+.DS_Store
+.vscode
+.cursor

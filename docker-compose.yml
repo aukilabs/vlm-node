@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-compute_node_db}
+      POSTGRES_USER: ${POSTGRES_USER:-compute_node_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-compute_node_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-compute_node_user} -d ${POSTGRES_DB:-compute_node_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+  ai:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+      - .env.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+      - .env.local
+    command: >
+      sh -c "
+        ./app/server
+      "
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+      - "${SERVER_ADMIN_PORT:-18190}:18190"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migration:
+        condition: service_completed_successfully 
+volumes:
+  postgres_data:
