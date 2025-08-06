@@ -1,58 +1,74 @@
 use actix_web::{web, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
+use posemesh_domain_http::{domain_data::DownloadQuery, DomainClient};
+use uuid::Uuid;
 
-#[derive(Serialize, Deserialize)]
-struct Job {
-    id: String,
-    status: String,
-    job_type: String,
-    created_at: String,
-    updated_at: String,
-    input: serde_json::Value,
-    output: Option<serde_json::Value>,
-    error: Option<serde_json::Value>,
+use crate::models::{CreateJobRequest, ListJobsRequest, TaskTimingV1Input, TASK_TIMING_V1};
+
+async fn create_job(
+    pool: web::Data<sqlx::PgPool>,
+    domain_client: web::Data<DomainClient>,
+    data_dir: web::Data<String>,
+    job: web::Json<CreateJobRequest>,
+) -> impl Responder {
+    let id = Uuid::new_v4().to_string();
+    let job_type = job.job_type.as_str();
+    match job_type {
+        TASK_TIMING_V1 => {
+            let res = serde_json::from_value::<TaskTimingV1Input>(job.input.clone());
+            if let Err(e) = res {
+                tracing::error!("Failed to parse input: {:?}", e);
+                return HttpResponse::BadRequest().body("Failed to parse input");
+            }
+            let input = res.unwrap();
+            if let Err(e) = crate::domain::download_for_job(&domain_client, &id, &input.domain_id, &data_dir, &DownloadQuery {
+                ids: input.domain_data_ids,
+                name: None,
+                data_type: None,
+            }).await {
+                tracing::error!("Failed to download domain data: {:?}", e);
+                return HttpResponse::InternalServerError().body("Failed to download domain data");
+            }
+        }
+        _ => {
+            return HttpResponse::BadRequest().body("Invalid job type");
+        }
+    }
+
+    let res = crate::pg::create_job(&pool, &id, &job.input, &job.job_type).await;
+    if let Err(e) = res {
+        tracing::error!("Failed to create job: {:?}", e);
+        return HttpResponse::InternalServerError().body("Failed to create job");
+    }
+    let job_schema = res.unwrap();
+    HttpResponse::Ok().json(job_schema)
 }
 
-#[derive(Deserialize)]
-struct CreateJobRequest {
-    job_type: String,
-    input: serde_json::Value,
+async fn list_jobs(
+    pool: web::Data<sqlx::PgPool>,
+    query: web::Query<ListJobsRequest>,
+) -> impl Responder {
+    match crate::pg::list_jobs(&pool, query.limit, query.offset.unwrap_or(0)).await {
+        Ok(jobs) => HttpResponse::Ok().json(jobs),
+        Err(e) => {
+            tracing::error!("Failed to list jobs: {:?}", e);
+            HttpResponse::InternalServerError().body("Failed to list jobs")
+        }
+    }
 }
 
-async fn create_job(job: web::Json<CreateJobRequest>) -> impl Responder {
-    // TODO: Insert job into database and return created job
-    HttpResponse::Ok().json(Job {
-        id: "mock_id".to_string(),
-        status: "created".to_string(),
-        job_type: job.job_type.clone(),
-        created_at: "2024-01-01T00:00:00Z".to_string(),
-        updated_at: "2024-01-01T00:00:00Z".to_string(),
-        input: job.input.clone(),
-        output: None,
-        error: None,
-    })
-}
-
-async fn list_jobs() -> impl Responder {
-    // TODO: Query jobs from database
-    let jobs: Vec<Job> = vec![]; // Placeholder
-    HttpResponse::Ok().json(jobs)
-}
-
-async fn get_job(path: web::Path<String>) -> impl Responder {
+async fn get_job(
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Path<String>,
+) -> impl Responder {
     let job_id = path.into_inner();
-    // TODO: Query job by id from database
-    let job = Job {
-        id: job_id,
-        status: "created".to_string(),
-        job_type: "mock_type".to_string(),
-        created_at: "2024-01-01T00:00:00Z".to_string(),
-        updated_at: "2024-01-01T00:00:00Z".to_string(),
-        input: serde_json::json!({}),
-        output: None,
-        error: None,
-    };
-    HttpResponse::Ok().json(job)
+    match crate::pg::get_job_by_id(&pool, &job_id).await {
+        Ok(Some(job)) => HttpResponse::Ok().json(job),
+        Ok(None) => HttpResponse::NotFound().body("Job not found"),
+        Err(e) => {
+            tracing::error!("Failed to get job: {:?}", e);
+            HttpResponse::InternalServerError().body("Failed to get job")
+        }
+    }
 }
 
 pub fn app_config(cfg: &mut web::ServiceConfig) {

@@ -1,11 +1,11 @@
 use std::path::Path;
 use std::time::Duration;
-use serde::Deserialize;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::migrate::Migrator;
 use sqlx::PgPool;
 
-#[derive(Deserialize)]
+use crate::models::{JobSchema, JobStatus};
+
 pub struct Config {
     pub postgres_url: String,
     pub postgres_pool_size: u32,
@@ -17,11 +17,11 @@ pub struct Config {
 impl Config {
     pub fn from_env() -> Result<Self, Box<dyn std::error::Error>> {
         Ok(Config {
-            postgres_url: std::env::var("POSTGRES_URL")?,
+            postgres_url: std::env::var("POSTGRES_URL").unwrap_or("postgres://postgres:postgres@localhost:5432/postgres".to_string()),
             postgres_pool_size: std::env::var("POSTGRES_POOL_SIZE").unwrap_or("10".to_string()).parse::<u32>()?,
             postgres_pool_idle_timeout: std::env::var("POSTGRES_POOL_IDLE_TIMEOUT").unwrap_or("300".to_string()).parse::<u64>()?,
             postgres_pool_connection_timeout: std::env::var("POSTGRES_POOL_CONNECTION_TIMEOUT").unwrap_or("10".to_string()).parse::<u64>()?,
-            migrations_path: std::env::var("MIGRATIONS_PATH").unwrap_or("../migrations".to_string()),
+            migrations_path: std::env::var("MIGRATIONS_PATH").unwrap_or("migrations".to_string()),
         })
     }
 }
@@ -40,6 +40,87 @@ pub async fn init_pg(config: &Config) -> Result<PgPool, Box<dyn std::error::Erro
         .await?;
 
     Ok(pool)
+}
+
+pub async fn create_job(
+    pool: &PgPool,
+    id: &str,
+    input: &serde_json::Value,
+    job_type: &str,
+) -> Result<JobSchema, sqlx::Error> {
+    let rec = sqlx::query_as::<_, JobSchema>(
+        "
+        INSERT INTO jobs (id, input, job_type, job_status)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
+        "
+    )
+    .bind(id)
+    .bind(input)
+    .bind(job_type)
+    .bind(JobStatus::Pending)
+    .fetch_one(pool)
+    .await?;
+    Ok(rec)
+}
+
+pub async fn list_jobs(
+    pool: &PgPool,
+    limit: i64,
+    offset: i64,
+) -> Result<Vec<JobSchema>, sqlx::Error> {
+    let jobs = sqlx::query_as::<_, JobSchema>(
+        r#"
+        SELECT *
+        FROM jobs
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2
+        "#
+    )
+    .bind(limit)
+    .bind(offset)
+    .fetch_all(pool)
+    .await?;
+    Ok(jobs)
+}
+
+pub async fn get_job_by_id(
+    pool: &PgPool,
+    id: &str,
+) -> Result<Option<JobSchema>, sqlx::Error> {
+    let job = sqlx::query_as::<_, JobSchema>(
+        r#"
+        SELECT *
+        FROM jobs
+        WHERE id = $1
+        "#
+    )
+    .bind(id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(job)
+}
+
+pub async fn update_job_status_by_id(
+    pool: &PgPool,
+    id: &str,
+    status: &JobStatus,
+    updated_at: &chrono::DateTime<chrono::Utc>,
+) -> Result<Option<JobSchema>, sqlx::Error> {
+    let job = sqlx::query_as::<_, JobSchema>(
+        r#"
+        UPDATE jobs
+        SET job_status = $1, updated_at = now()
+        WHERE id = $2 AND updated_at = $3
+        RETURNING *
+        "#
+    )
+    .bind(status)
+    .bind(id)
+    .bind(updated_at)
+    .fetch_optional(pool)
+    .await?;
+    Ok(job)
 }
 
 

@@ -7,13 +7,15 @@ from worker import process_job
 # Optional import for multi-threading (future use)
 from concurrent.futures import ThreadPoolExecutor
 
-DB_CONFIG = {
-    "dbname": "mydb",
-    "user": "postgres",
-    "password": "password",
-    "host": "localhost",
-    "port": 5432
-}
+import os
+import psycopg2
+
+POSTGRES_URL = os.environ.get("POSTGRES_URL")
+if not POSTGRES_URL:
+    raise RuntimeError("POSTGRES_URL environment variable not set")
+
+def get_db_conn():
+    return psycopg2.connect(POSTGRES_URL)
 
 USE_MULTITHREAD = False  # 🔹 toggle this later
 MAX_WORKERS = 2          # 🔹 adjust when enabling multi-thread
@@ -21,7 +23,7 @@ MAX_WORKERS = 2          # 🔹 adjust when enabling multi-thread
 def get_next_job(conn):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
-            SELECT * FROM jobs
+            SELECT id, input FROM jobs
             WHERE status = 'pending'
             ORDER BY created_at ASC
             LIMIT 1
@@ -29,9 +31,10 @@ def get_next_job(conn):
         """)
         job = cur.fetchone()
         if job:
-            cur.execute("UPDATE jobs SET status='started' WHERE id=%s", (job['id'],))
+            cur.execute("UPDATE jobs SET status='running' WHERE id=%s", (job['id'],))
             conn.commit()
-        return job
+            return job
+        return None
 
 def single_thread_main():
     conn = psycopg2.connect(**DB_CONFIG)
@@ -41,7 +44,7 @@ def single_thread_main():
         job = get_next_job(conn)
         if job:
             print(f"[Dispatcher] Processing job {job['id']} sequentially...")
-            process_job(conn, job['id'])  # 🔹 Sequential execution
+            process_job(conn, job)  # 🔹 Sequential execution
         else:
             time.sleep(2)
 
@@ -54,14 +57,14 @@ def multi_thread_main():
             job = get_next_job(main_conn)
             if job:
                 print(f"[Dispatcher] Submitting job {job['id']} to worker...")
-                executor.submit(threaded_job, job['id'])
+                executor.submit(threaded_job, job)
             else:
                 time.sleep(2)
 
-def threaded_job(job_id):
+def threaded_job(job):
     # Each thread has its own connection
     conn = psycopg2.connect(**DB_CONFIG)
-    process_job(conn, job_id)
+    process_job(conn, job)
     conn.close()
 
 if __name__ == "__main__":
