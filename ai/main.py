@@ -1,43 +1,62 @@
 # main.py
 import time
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import psycopg
 from worker import process_job
 
 # Optional import for multi-threading (future use)
 from concurrent.futures import ThreadPoolExecutor
 
 import os
-import psycopg2
 
 POSTGRES_URL = os.environ.get("POSTGRES_URL")
 if not POSTGRES_URL:
     raise RuntimeError("POSTGRES_URL environment variable not set")
+# Parse the POSTGRES_URL to a Python connection string for psycopg
+import urllib.parse
+
+def parse_postgres_url(url):
+    # Example: postgres://user:pass@host:port/db
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme != "postgres":
+        raise ValueError("Only postgres:// URLs are supported")
+    user = parsed.username
+    password = parsed.password
+    host = parsed.hostname
+    port = parsed.port
+    dbname = parsed.path.lstrip("/")
+    # psycopg expects: dbname=... user=... password=... host=... port=...
+    return f"dbname={dbname} user={user} password={password} host={host} port={port}"
+
+DB_CONN_STR = parse_postgres_url(POSTGRES_URL)
 
 def get_db_conn():
-    return psycopg2.connect(POSTGRES_URL)
+    return psycopg.connect(DB_CONN_STR)
 
 USE_MULTITHREAD = False  # 🔹 toggle this later
 MAX_WORKERS = 2          # 🔹 adjust when enabling multi-thread
 
 def get_next_job(conn):
-    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+    with conn.cursor() as cur:
         cur.execute("""
             SELECT id, input FROM jobs
-            WHERE status = 'pending'
+            WHERE job_status = 'pending'
             ORDER BY created_at ASC
             LIMIT 1
             FOR UPDATE SKIP LOCKED
         """)
         job = cur.fetchone()
         if job:
-            cur.execute("UPDATE jobs SET status='running' WHERE id=%s", (job['id'],))
+            job = {
+                "id": job[0],
+                "input": job[1]
+            }
+            cur.execute("UPDATE jobs SET job_status='running' WHERE id=%s", (job['id'],))
             conn.commit()
             return job
         return None
 
 def single_thread_main():
-    conn = psycopg2.connect(**DB_CONFIG)
+    conn = get_db_conn()
     print("[Dispatcher] Running in single-thread mode")
 
     while True:
@@ -52,7 +71,7 @@ def single_thread_main():
 def multi_thread_main():
     print("[Dispatcher] Running in multi-thread mode")
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        main_conn = psycopg2.connect(**DB_CONFIG)
+        main_conn = get_db_conn()
         while True:
             job = get_next_job(main_conn)
             if job:
@@ -63,7 +82,7 @@ def multi_thread_main():
 
 def threaded_job(job):
     # Each thread has its own connection
-    conn = psycopg2.connect(**DB_CONFIG)
+    conn = get_db_conn()
     process_job(conn, job)
     conn.close()
 

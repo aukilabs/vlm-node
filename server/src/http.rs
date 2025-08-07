@@ -20,13 +20,20 @@ async fn create_job(
                 return HttpResponse::BadRequest().body("Failed to parse input");
             }
             let input = res.unwrap();
-            if let Err(e) = crate::domain::download_for_job(&domain_client, &id, &input.domain_id, &data_dir, &DownloadQuery {
-                ids: input.domain_data_ids,
+            if input.image_ids.is_empty() {
+                return HttpResponse::BadRequest().body("No image ids provided");
+            }
+            let count = crate::domain::download_for_job(&domain_client, &id, &input.domain_id, &data_dir, &DownloadQuery {
+                ids: vec![],
                 name: None,
-                data_type: None,
-            }).await {
+                data_type: Some("photo_upload".to_string()),
+            }).await;
+            if let Err(e) = count {
                 tracing::error!("Failed to download domain data: {:?}", e);
                 return HttpResponse::InternalServerError().body("Failed to download domain data");
+            }
+            if count.unwrap() == 0 {
+                return HttpResponse::BadRequest().body("No images found");
             }
         }
         _ => {
@@ -71,6 +78,40 @@ async fn get_job(
     }
 }
 
+async fn retry_job(
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Path<String>,
+) -> impl Responder {
+    let job_id = path.into_inner();
+    // Fetch the job to check its status
+    let job = match crate::pg::get_job_by_id(&pool, &job_id).await {
+        Ok(Some(job)) => job,
+        Ok(None) => return HttpResponse::NotFound().body("Job not found"),
+        Err(e) => {
+            tracing::error!("Failed to get job: {:?}", e);
+            return HttpResponse::InternalServerError().body("Failed to get job");
+        }
+    };
+
+    // Only allow retry if job is Failed or Cancelled
+    use crate::models::JobStatus;
+    match job.common.status {
+        JobStatus::Failed | JobStatus::Cancelled => {
+            // Set job status to Pending, clear error and output
+            let res = crate::pg::retry_job(&pool, &job_id, &JobStatus::Pending, &job.common.updated_at).await;
+            match res {
+                Ok(_) => HttpResponse::Ok().body("Job status set to pending"),
+                Err(e) => {
+                    tracing::error!("Failed to update job status: {:?}", e);
+                    HttpResponse::InternalServerError().body("Failed to update job status")
+                }
+            }
+        }
+        _ => HttpResponse::BadRequest().body("Only failed or cancelled jobs can be retried"),
+    }
+}
+
+
 pub fn app_config(cfg: &mut web::ServiceConfig) {
     cfg
         .service(
@@ -81,5 +122,6 @@ pub fn app_config(cfg: &mut web::ServiceConfig) {
         .service(
             web::resource("/jobs/{id}")
                 .route(web::get().to(get_job))
+                .route(web::put().to(retry_job))
         );
 }

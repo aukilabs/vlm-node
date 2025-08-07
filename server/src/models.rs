@@ -45,16 +45,8 @@ pub struct JobCommon {
     pub hash: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Job {
-    #[serde(flatten)]
-    pub common: JobCommon,
-    pub error: Option<serde_json::Value>,
-    pub job_type: JobDescription,
-}
-
 #[derive(Serialize, Deserialize, sqlx::FromRow)]
-pub struct JobSchema {
+pub struct Job {
     #[serde(flatten)]
     #[sqlx(flatten)]
     pub common: JobCommon,
@@ -68,7 +60,7 @@ pub struct JobSchema {
 pub struct TaskTimingV1Input {
     pub prompt: String,
     pub webhook_url: String,
-    pub domain_data_ids: Vec<String>,
+    pub image_ids: Vec<String>,
     pub domain_id: String,
 }
 
@@ -76,15 +68,6 @@ pub struct TaskTimingV1Input {
 pub struct TaskTimingV1Output {
     pub start_image_id: String,
     pub end_image_id: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "job_type", rename_all = "snake_case")]
-pub enum JobDescription {
-    TaskTimingV1 {
-        input: TaskTimingV1Input,
-        output: Option<TaskTimingV1Output>,
-    },
 }
 
 #[derive(Deserialize, Debug)]

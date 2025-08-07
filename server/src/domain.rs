@@ -11,7 +11,8 @@ pub async fn download_for_job(
     domain_id: &str,
     data_dir: &str,
     query: &DownloadQuery,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<i64, Box<dyn std::error::Error>> {
+    let mut count = 0;
     let mut rx = domain_client.download_domain_data(&domain_id, query).await?;
 
     while let Some(Ok(data)) = rx.next().await {
@@ -37,7 +38,8 @@ pub async fn download_for_job(
                 return Err(e.into());
             }
         }
+        count += 1;
     }
 
-    Ok(())
+    Ok(count)
 }

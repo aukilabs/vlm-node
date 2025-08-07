@@ -4,7 +4,7 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::migrate::Migrator;
 use sqlx::PgPool;
 
-use crate::models::{JobSchema, JobStatus};
+use crate::models::{Job, JobStatus};
 
 pub struct Config {
     pub postgres_url: String,
@@ -47,8 +47,8 @@ pub async fn create_job(
     id: &str,
     input: &serde_json::Value,
     job_type: &str,
-) -> Result<JobSchema, sqlx::Error> {
-    let rec = sqlx::query_as::<_, JobSchema>(
+) -> Result<Job, sqlx::Error> {
+    let rec = sqlx::query_as::<_, Job>(
         "
         INSERT INTO jobs (id, input, job_type, job_status)
         VALUES ($1, $2, $3, $4)
@@ -68,8 +68,8 @@ pub async fn list_jobs(
     pool: &PgPool,
     limit: i64,
     offset: i64,
-) -> Result<Vec<JobSchema>, sqlx::Error> {
-    let jobs = sqlx::query_as::<_, JobSchema>(
+) -> Result<Vec<Job>, sqlx::Error> {
+    let jobs = sqlx::query_as::<_, Job>(
         r#"
         SELECT *
         FROM jobs
@@ -87,8 +87,8 @@ pub async fn list_jobs(
 pub async fn get_job_by_id(
     pool: &PgPool,
     id: &str,
-) -> Result<Option<JobSchema>, sqlx::Error> {
-    let job = sqlx::query_as::<_, JobSchema>(
+) -> Result<Option<Job>, sqlx::Error> {
+    let job = sqlx::query_as::<_, Job>(
         r#"
         SELECT *
         FROM jobs
@@ -101,16 +101,16 @@ pub async fn get_job_by_id(
     Ok(job)
 }
 
-pub async fn update_job_status_by_id(
+pub async fn retry_job(
     pool: &PgPool,
     id: &str,
     status: &JobStatus,
     updated_at: &chrono::DateTime<chrono::Utc>,
-) -> Result<Option<JobSchema>, sqlx::Error> {
-    let job = sqlx::query_as::<_, JobSchema>(
+) -> Result<Option<Job>, sqlx::Error> {
+    let job = sqlx::query_as::<_, Job>(
         r#"
         UPDATE jobs
-        SET job_status = $1, updated_at = now()
+        SET job_status = $1, updated_at = now(), error = null, output = null
         WHERE id = $2 AND updated_at = $3
         RETURNING *
         "#

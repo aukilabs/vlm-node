@@ -30,7 +30,7 @@ worker:
 		exit 1; \
 	fi
 	@echo "Loading environment variables from .env.local..."
-	@set -a; source .env; source .env.local; set +a && cd ai && $(PYTHON) worker.py
+	@set -a; source .env; source .env.local; set +a && $(ACTIVATE) $(PYTHON) ai/main.py
 
 server:
 	@if ! command -v cargo &> /dev/null; then \
