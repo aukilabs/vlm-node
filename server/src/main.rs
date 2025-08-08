@@ -1,4 +1,5 @@
-use actix_web::{web, App, HttpServer};
+use actix_cors::Cors;
+use actix_web::{http::header::{AUTHORIZATION, CONTENT_TYPE}, web, App, HttpServer};
 use posemesh_domain_http::{config::Config, DomainClient};
 
 mod pg;
@@ -42,10 +43,17 @@ async fn main() {
     let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "../data".to_string());
     
     let server = HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allowed_methods(vec!["GET", "POST", "PUT"])
+            .allowed_headers(vec![AUTHORIZATION, CONTENT_TYPE])
+            .supports_credentials()
+            .max_age(3600);
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(domain_client.clone()))
             .app_data(web::Data::new(data_dir.clone()))
+            .wrap(cors)
             .configure(http::app_config)
     })
         .bind(format!(

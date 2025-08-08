@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Runner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .executing_status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .executing_status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .executing_status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .readonly-field {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #495057;
+        }
+        
+        .json-display {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Job Runner</h1>
+        
+        <div id="executing_status" class="executing_status"></div>
+        
+        <div class="form-group">
+            <label for="job_id">Job ID:</label>
+            <input type="text" id="job_id" name="job_id" placeholder="Enter job ID">
+        </div>
+        
+        <div class="form-group">
+            <button id="loadButton" onclick="loadJob()" style="margin-right: 10px;">Load Job</button>
+            <button id="runButton" onclick="runJob()">Run</button>
+        </div>
+
+        <div class="form-group">
+            <label for="job_type">Job Type:</label>
+            <select id="job_type" name="job_type">
+                <option value="task_timing_v1">Task Timing V1</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="vlm_prompt">VLM Prompt:</label>
+            <textarea id="vlm_prompt" name="vlm_prompt" placeholder="How to describe the image?"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="prompt">Prompt:</label>
+            <textarea id="prompt" name="prompt" placeholder="What event to detect?"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="image_ids">Image IDs:</label>
+            <textarea id="image_ids" name="image_ids" placeholder="Enter image IDs separated by newlines" readonly class="readonly-field"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="webhook_url">Webhook URL:</label>
+            <input type="text" id="webhook_url" name="webhook_url" placeholder="Enter webhook URL" readonly class="readonly-field">
+        </div>
+        
+        <div class="form-group">
+            <label for="domain_id">Domain ID:</label>
+            <input type="text" id="domain_id" name="domain_id" placeholder="Enter domain ID" readonly class="readonly-field">
+        </div>
+        
+        <div class="form-group">
+            <label for="job_status">Status:</label>
+            <input type="text" id="job_status" name="job_status" readonly class="readonly-field">
+        </div>
+        
+        <div class="form-group">
+            <label for="job_error">Error:</label>
+            <div id="job_error" class="json-display"></div>
+        </div>
+        
+        <div class="form-group">
+            <label for="job_output">Output:</label>
+            <div id="job_output" class="json-display"></div>
+        </div>
+    </div>
+
+    <script>
+
+        function displayJob(jobData) {
+            document.getElementById('vlm_prompt').value = jobData.input.vlm_prompt || '';
+            document.getElementById('prompt').value = jobData.input.prompt || '';
+            document.getElementById('job_type').value = jobData.job_type || '';
+            document.getElementById('job_status').value = jobData.status || '';
+            document.getElementById('webhook_url').value = jobData.input.webhook_url || '';
+            document.getElementById('domain_id').value = jobData.input.domain_id || '';
+            document.getElementById('image_ids').value = jobData.input.image_ids.join('\n') || '';
+ 
+            // Display error and output as pretty JSON if they exist
+            displayJsonField('job_error', jobData.error);
+            displayJsonField('job_output', jobData.output);
+        }
+        async function runJob() {
+            const jobId = document.getElementById('job_id').value.trim();
+            const prompt = document.getElementById('prompt').value.trim();
+            const vlmPrompt = document.getElementById('vlm_prompt').value.trim();
+            const jobType = document.getElementById('job_type').value.trim();
+            const button = document.getElementById('runButton');
+            const webhookUrl = document.getElementById('webhook_url').value.trim();
+            const domainId = document.getElementById('domain_id').value.trim();
+            const imageIds = document.getElementById('image_ids').value.trim();
+            const executingStatus = document.getElementById('executing_status');
+            
+            // Validate inputs
+            if (!jobId) {
+                showStatus('Please enter a Job ID', 'error');
+                return;
+            }
+            
+            if (!prompt) {
+                showStatus('Please enter a prompt', 'error');
+                return;
+            }
+
+            if (!vlmPrompt) {
+                showStatus('Please enter a VLM prompt', 'error');
+                return;
+            }
+            
+            // Disable button and show loading
+            button.disabled = true;
+            button.textContent = 'Running...';
+            hideExecutingStatus();
+            
+            let body = {
+                job_type: jobType,
+                input: {
+                    prompt: prompt,
+                    vlm_prompt: vlmPrompt,
+                    webhook_url: webhookUrl,
+                    domain_id: domainId,   
+                    image_ids: imageIds.split('\n')
+                }
+            };
+            console.log(body);
+
+            try {
+                const response = await fetch(`http://localhost:8080/jobs/${jobId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(body)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showExecutingStatus('Job submitted successfully!', 'success');
+                    displayJob(result);
+                } else {
+                    const errorText = await response.text();
+                    showExecutingStatus(`Error: ${response.status} - ${errorText}`, 'error');
+                }
+            } catch (error) {
+                showExecutingStatus(`Network error: ${error.message}`, 'error');
+            } finally {
+                // Re-enable button
+                button.disabled = false;
+                button.textContent = 'Run';
+            }
+        }
+        
+        async function loadJob() {
+            const jobId = document.getElementById('job_id').value.trim();
+            const executingStatus = document.getElementById('executing_status');
+            const loadButton = document.getElementById('loadButton');
+            const runButton = document.getElementById('runButton');
+
+            if (!jobId) {
+                showExecutingStatus('Please enter a Job ID to load', 'error');
+                return;
+            }
+
+            // Disable buttons and show loading
+            loadButton.disabled = true;
+            loadButton.textContent = 'Loading...';
+            runButton.disabled = true;
+            runButton.textContent = 'Loading...';
+            hideExecutingStatus();
+
+            try {
+                const response = await fetch(`http://localhost:8080/jobs/${jobId}`);
+                if (response.ok) {
+                    const jobData = await response.json();
+                    displayJob(jobData);
+                    
+                    showExecutingStatus('Job loaded successfully!', 'success');
+                } else {
+                    const errorText = await response.text();
+                    showExecutingStatus(`Error loading job: ${response.status} - ${errorText}`, 'error');
+                }
+            } catch (error) {
+                showExecutingStatus(`Network error loading job: ${error.message}`, 'error');
+            } finally {
+                // Re-enable buttons
+                loadButton.disabled = false;
+                loadButton.textContent = 'Load Job';
+                runButton.disabled = false;
+                runButton.textContent = 'Run';
+            }
+        }
+
+        function showExecutingStatus(message, type) {
+            const executingStatus = document.getElementById('executing_status');
+            executingStatus.textContent = message;
+            executingStatus.className = `executing_status ${type}`;
+            executingStatus.style.display = 'block';
+        }
+        
+        function hideExecutingStatus() {
+            const executingStatus = document.getElementById('executing_status');
+            executingStatus.style.display = 'none';
+        }
+        
+        function displayJsonField(fieldId, data) {
+            const field = document.getElementById(fieldId);
+            if (data !== null && data !== undefined) {
+                try {
+                    // If data is already a string, try to parse it
+                    const jsonData = typeof data === 'string' ? JSON.parse(data) : data;
+                    field.textContent = JSON.stringify(jsonData, null, 2);
+                    field.style.display = 'block';
+                } catch (e) {
+                    // If parsing fails, display as string
+                    field.textContent = String(data);
+                    field.style.display = 'block';
+                }
+            } else {
+                field.style.display = 'none';
+            }
+        }
+        
+        // Allow Enter key to submit
+        document.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && event.ctrlKey) {
+                runJob();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 # main.py
 import time
 import psycopg
-from worker import process_job
+from worker import process_job, fail_job
 
 # Optional import for multi-threading (future use)
 from concurrent.futures import ThreadPoolExecutor
@@ -50,7 +50,7 @@ def get_next_job(conn):
                 "id": job[0],
                 "input": job[1]
             }
-            cur.execute("UPDATE jobs SET job_status='running' WHERE id=%s", (job['id'],))
+            cur.execute("UPDATE jobs SET job_status='running', updated_at=now() WHERE id=%s", (job['id'],))
             conn.commit()
             return job
         return None
@@ -63,7 +63,19 @@ def single_thread_main():
         job = get_next_job(conn)
         if job:
             print(f"[Dispatcher] Processing job {job['id']} sequentially...")
-            process_job(conn, job)  # 🔹 Sequential execution
+            try:
+                process_job(conn, job)  # 🔹 Sequential execution
+            except Exception as e:
+                print(f"[Dispatcher] Error processing job {job['id']}: {e}")
+                err = {
+                    "code": 100,
+                    "message": str(e)
+                }
+                fail_job(conn, job['id'], err)
+            except KeyboardInterrupt:
+                print("[Dispatcher] Keyboard interrupt received, cancelling job...")
+                cancel_job(conn, job['id'])
+                exit(0)
         else:
             time.sleep(2)
 

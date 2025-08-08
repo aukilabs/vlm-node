@@ -59,6 +59,7 @@ pub struct Job {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TaskTimingV1Input {
     pub prompt: String,
+    pub vlm_prompt: String,
     pub webhook_url: String,
     pub image_ids: Vec<String>,
     pub domain_id: String,

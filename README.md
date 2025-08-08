@@ -2,6 +2,44 @@
 
 This compute node is a proof of concept (PoC) for using LLaVA (Large Language and Vision Assistant) to analyze image streams of employees performing tasks.
 
+# Development
+
+## Prerequisites
+
+Before you begin, make sure you have the following installed on your system:
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [Ollama](https://ollama.com/download) (for running local language/vision models)
+
+## Setup
+
+1. **Start the server** (accepts jobs and manages the queue):
+```
+make server
+```
+
+2. **Submit a job** (example using `curl`):
+```
+curl -X POST http://localhost:8080/jobs \
+    -H "Content-Type: application/json" \
+    -d '{"job_type":"task_timing_v1","input":{"image_ids":[],"domain_id":"","prompt":"","webhook_url":""}}'
+```
+
+3. **Start a worker** (processes jobs from the queue):
+
+```
+ollama pull llava:7b
+ollama pull llama3
+make worker
+```
+> You can run multiple workers in parallel if your system resources allow.
+
+4. **Check Job Status**
+```
+curl "localhost:8080/jobs?limit=100"
+curl "localhost:8080/jobs/{job_id}"
+```
+
 
 # compute-node
 

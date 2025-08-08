@@ -105,17 +105,19 @@ pub async fn retry_job(
     pool: &PgPool,
     id: &str,
     status: &JobStatus,
+    input: &serde_json::Value,
     updated_at: &chrono::DateTime<chrono::Utc>,
 ) -> Result<Option<Job>, sqlx::Error> {
     let job = sqlx::query_as::<_, Job>(
         r#"
         UPDATE jobs
-        SET job_status = $1, updated_at = now(), error = null, output = null
-        WHERE id = $2 AND updated_at = $3
+        SET job_status = $1, updated_at = now(), error = null, output = null, input = $2
+        WHERE id = $3 AND updated_at = $4
         RETURNING *
         "#
     )
     .bind(status)
+    .bind(input)
     .bind(id)
     .bind(updated_at)
     .fetch_optional(pool)

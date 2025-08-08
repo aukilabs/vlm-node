@@ -81,6 +81,7 @@ async fn get_job(
 async fn retry_job(
     pool: web::Data<sqlx::PgPool>,
     path: web::Path<String>,
+    body: web::Json<CreateJobRequest>,
 ) -> impl Responder {
     let job_id = path.into_inner();
     // Fetch the job to check its status
@@ -92,25 +93,51 @@ async fn retry_job(
             return HttpResponse::InternalServerError().body("Failed to get job");
         }
     };
+    if body.job_type != job.job_type {
+        return HttpResponse::BadRequest().body("Job type mismatch");
+    }
+
+    let input = body.input.clone();
+    let _ = match body.job_type.as_str() {
+        TASK_TIMING_V1 => {
+            let res = serde_json::from_value::<TaskTimingV1Input>(input.clone());
+            if let Err(e) = res {
+                tracing::error!("Failed to parse input: {:?}", e);
+                return HttpResponse::BadRequest().body("Failed to parse input");
+            }
+            res.unwrap()
+        }
+        _ => {
+            return HttpResponse::BadRequest().body("Invalid job type");
+        }
+    };
 
     // Only allow retry if job is Failed or Cancelled
     use crate::models::JobStatus;
     match job.common.status {
-        JobStatus::Failed | JobStatus::Cancelled => {
+        JobStatus::Failed | JobStatus::Cancelled | JobStatus::Completed => {
             // Set job status to Pending, clear error and output
-            let res = crate::pg::retry_job(&pool, &job_id, &JobStatus::Pending, &job.common.updated_at).await;
+            let res = crate::pg::retry_job(&pool, &job_id, &JobStatus::Pending, &input, &job.common.updated_at).await;
             match res {
-                Ok(_) => HttpResponse::Ok().body("Job status set to pending"),
+                Ok(_) => (),
                 Err(e) => {
                     tracing::error!("Failed to update job status: {:?}", e);
-                    HttpResponse::InternalServerError().body("Failed to update job status")
+                    return HttpResponse::InternalServerError().body("Failed to update job status");
                 }
             }
         }
-        _ => HttpResponse::BadRequest().body("Only failed or cancelled jobs can be retried"),
+        _ => return HttpResponse::BadRequest().body("Only failed or cancelled jobs can be retried"),
+    }
+
+    match crate::pg::get_job_by_id(&pool, &job_id).await {
+        Ok(Some(job)) => return HttpResponse::Ok().json(job),
+        Ok(None) => return HttpResponse::NotFound().body("Job not found"),
+        Err(e) => {
+            tracing::error!("Failed to get job: {:?}", e);
+            return HttpResponse::InternalServerError().body("Failed to get job");
+        }
     }
 }
-
 
 pub fn app_config(cfg: &mut web::ServiceConfig) {
     cfg
