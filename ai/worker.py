@@ -161,7 +161,8 @@ def find_images(input_dir):
 
     return image_paths
 
-INPUT_DIR = "data/input/"
+DATA_DIR = os.environ.get("DATA_DIR", "data")
+INPUT_DIR = DATA_DIR + "/input/"
 
 def process_job(conn, job: dict):
     print(f"[Worker] Processing job {job['id']}")
