@@ -76,7 +76,7 @@ def run_inference(vlm_prompt, prompt, image_paths):
     model = os.environ.get("MODEL", "gemma3:4b")
 
     print(f"[Worker] Running inference for {len(image_paths)} images: {image_paths}")
-    results = ""
+    results = "timestamp,event\n"
 
     for image_path in image_paths:
         print(f"[Worker] Image path: {image_path}")
@@ -86,15 +86,16 @@ def run_inference(vlm_prompt, prompt, image_paths):
                 {"role": "user", "content": vlm_prompt, "images": [image_path]}
             ],
         )
-        results += '{"timestamp":' + parse_image_timestamp(image_path) + ", " + '"content":' + res.message.content + "}\n"
+        results += '"' + parse_image_timestamp(image_path) + '",' + '"' + res.message.content + '"\n'
         print(f"[Worker] Inference output: {res}")
 
     print(f"[Worker] Inference completed")
 
     # Compose a prompt for temporal reasoning
     temporal_prompt = (
-        prompt + "\n" +
-        "Timeline:" + results
+        "Given the timeline in the format of timestamp,event" + "\n" +
+        "Timeline:" + results + "\n" +
+        prompt
     )
 
     # Run the LLM for temporal reasoning
@@ -106,10 +107,10 @@ def run_inference(vlm_prompt, prompt, image_paths):
     )
     print(f"[Worker] Temporal reasoning output: {temporal_res.message.content}")
 
-    # Append the temporal reasoning result to the results
-    results += temporal_res.message.content
-
-    return results
+    return {
+        "logs": results,
+        "temporal_output": temporal_res.message.content
+    }
 
 def send_webhook(webhook_url, job_id, data, error):
     if webhook_url is None or webhook_url == "":
