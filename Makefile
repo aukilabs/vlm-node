@@ -7,7 +7,7 @@ ACTIVATE=. $(VENV)/bin/activate;
 # Default target
 .DEFAULT_GOAL := help
 
-.PHONY: server venv install clean
+.PHONY: server venv install clean build
 
 help:
 	@echo "make venv        - Create virtual environment"
@@ -50,7 +50,7 @@ server:
 server-docker:
 	@docker compose up postgres server -d
 
-build-server:
+build:
 	@echo "Building for TARGETPLATFORM: $${TARGETPLATFORM}, CLIENT: $${CLIENT}"
 	@cd server && ../build-rust.sh
 

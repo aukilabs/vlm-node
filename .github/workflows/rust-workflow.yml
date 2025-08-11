@@ -1,0 +1,270 @@
+name: Rust workflow
+
+on:
+  workflow_call:
+    secrets:
+      aws_access_key:
+        required: true
+      aws_secret_access_key:
+        required: true
+      argocd_password:
+        required: false
+      test_env_vars:
+        required: false
+        description: |
+          Environment variables for tests in JSON format, e.g. `{"VAR1": "value1", "VAR2": "value2"}`.
+          If not provided, no environment variables will be set.
+    inputs:
+      argocd_host:
+        type: string
+        required: false
+      argocd_apps:
+        type: string
+        default: '[]'
+      aws_region:
+        required: true
+        type: string
+      work_dir:
+        type: string
+        default: "."
+      enable_test:
+        default: false
+        type: boolean
+      enable_build:
+        default: false
+        type: boolean
+      extra_tag:
+        required: false
+        type: string
+      enable_sync:
+        default: false
+        type: boolean
+      enable_restart:
+        default: false
+        type: boolean
+      image_name:
+        type: string
+        required: false
+      client_configs:
+        type: string
+        required: false
+        default: '[{"client": "default"}]'
+
+jobs:
+  test:
+    name: Test
+    if: ${{ inputs.enable_test }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Set up environment variables
+        run: |
+          test_env_vars=$(cat <<EOF
+          ${{ secrets.test_env_vars }}
+          EOF
+          )
+
+          if [ -z "${test_env_vars}" ]; then
+            echo "No test environment variables provided."
+            test_env_vars="{}"
+          fi
+
+          {
+            echo "test_env_vars<<EOF"
+            echo "${test_env_vars}"
+            echo "EOF"
+          } >> $GITHUB_ENV
+
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Run tests
+        working-directory: ${{ inputs.work_dir }}
+        env:
+          ${{ fromJSON(env.test_env_vars) }}
+        run: |
+          make test 
+  build:
+    name: Build
+    if: ${{ inputs.enable_build }}
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+        client_config: ${{ fromJSON(inputs.client_configs) }}
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+      # Cache cargo registry and index
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+      # Cache cargo binaries
+      - name: Cache cargo bin
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/bin
+          key: ${{ runner.os }}-cargo-bin-cross
+          restore-keys: |
+            ${{ runner.os }}-cargo-bin-
+      - name: Build binary
+        working-directory: ${{ inputs.work_dir }}
+        env:
+          TARGETPLATFORM: ${{ matrix.platform }}
+          CLIENT: ${{ matrix.client_config.client }}
+        run: |
+          make build
+      - name: Normalize platform name
+        run: echo "PLATFORM_SAFE=${{ matrix.platform }}" | sed 's/\//-/' >> $GITHUB_ENV
+
+      - name: Upload target directory
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ inputs.work_dir }}/target/${{ env.PLATFORM_SAFE }}
+          name: ${{ matrix.client_config.client }}-${{ env.PLATFORM_SAFE }}
+          retention-days: 1
+
+  push:
+    name: push
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        client_config: ${{ fromJSON(inputs.client_configs) }}
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Download target directory
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/artifacts
+          pattern: ${{ matrix.client_config.client }}-*
+
+      - name: Combine target directories
+        run: |
+          mkdir -p ${{ inputs.work_dir }}/target
+          for dir in /tmp/artifacts/*; do
+            echo "Merging from $dir"
+            subdir_name=$(basename "$dir" | cut -d'-' -f2-)
+            mv "$dir" "${{ inputs.work_dir }}/target/${subdir_name}"
+          done
+          ls -la ${{ inputs.work_dir }}/target
+          ls -la ${{ inputs.work_dir }}/target/linux-amd64
+          ls -la ${{ inputs.work_dir }}/target/linux-arm64
+      
+      - name: Configure environment
+        run: |
+          image_name="$(echo "${{ inputs.client_configs }}" | yq '.[] | select(.client == "${{ matrix.client_config.client }}").image_name' || true)"
+          if [ -n "$image_name" ] && [ "$image_name" != "null" ]; then
+            echo "IMAGE_NAME=${image_name}" >> $GITHUB_ENV
+          else
+            if [ -n "${{ inputs.image_name }}" ]; then
+              image_name="${{ inputs.image_name }}"
+            else
+              image_name="${{ github.event.repository.name }}"
+            fi
+            if [ "${{ matrix.client_config.client }}" != "default" ]; then
+              image_name="${image_name}-${{ matrix.client_config.client }}"
+            fi
+            lowercase_image_name="${image_name,,}"
+            echo "IMAGE_NAME=${lowercase_image_name}" >> $GITHUB_ENV
+          fi
+
+      # Build and push Docker image
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.aws_access_key }}
+          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Log in to AWS ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker metadata
+        id: docker-metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.ecr-login.outputs.registry }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=long,prefix=
+            type=ref,event=branch
+            type=raw,enable=${{ inputs.extra_tag != '' }},value=${{ inputs.extra_tag }}
+            type=match,pattern=(\w+-)?(v\d+\.\d+\.\d+),group=2
+            type=match,pattern=(\w+-)?(v\d+\.\d+),group=2
+            type=match,pattern=(\w+-)?(v\d+),group=2
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ inputs.work_dir }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.docker-metadata.outputs.tags }}
+
+      - name: Wait for ECR image replication
+        if: ${{ inputs.enable_sync || inputs.enable_restart }}
+        run: |
+          sleep 5
+          rounds=15
+          for i in $(seq 1 ${rounds}); do
+            echo "Waiting for ECR image replication to finish (${i}/${rounds})..."
+            aws ecr describe-image-replication-status --repository-name "${IMAGE_NAME}" --image-id "imageTag=${{ github.sha }}" --region "${{ inputs.aws_region }}" --output text | grep IN_PROGRESS || break
+            sleep 10
+          done
+
+  deploy:
+    name: Deploy
+    needs: push
+    if: ${{ inputs.argocd_host }}
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        app: ${{ fromJSON(inputs.argocd_apps) }}
+      fail-fast: true
+    steps:
+      - name: Authenticate ArgoCD
+        uses: clowdhaus/argo-cd-action/@v2.3.0
+        with:
+          command: login
+          options: --username admin --password "${{ secrets.argocd_password }}" --grpc-web "${{ inputs.argocd_host }}:443"
+      - name: Sync ArgoCD app
+        uses: clowdhaus/argo-cd-action/@v2.3.0
+        if: ${{ inputs.enable_sync }}
+        with:
+          command: app sync "${{ matrix.app }}"
+          options: --grpc-web --async
+      - name: Restart ArgoCD app
+        uses: clowdhaus/argo-cd-action/@v2.3.0
+        if: ${{ inputs.enable_restart }}
+        with:
+          command: app actions run "${{ matrix.app }}" restart
+          options: --kind Deployment --resource-name "${{ matrix.app }}" --grpc-web

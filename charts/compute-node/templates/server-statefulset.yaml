@@ -1,0 +1,66 @@
+{{- if .Values.server.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "compute-node.serverStatefulSetName" . }}
+  labels:
+    {{- include "compute-node.nodeLabels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "compute-node.serverServiceName" . }}
+  replicas: {{ .Values.server.replicas }}
+  selector:
+    matchLabels:
+      {{- include "compute-node.nodeSelectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: server
+  template:
+    metadata:
+      labels:
+        {{- include "compute-node.nodeSelectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: server
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "compute-node.serviceAccountName" . }}
+      {{- end }}
+      containers:
+      - name: server
+        image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
+        imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.server.ports.main }}
+          protocol: TCP
+        - name: admin
+          containerPort: {{ .Values.server.ports.admin }}
+          protocol: TCP
+        env:
+        {{- range $key, $value := .Values.server.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        envFrom:
+        - configMapRef:
+            name: {{ include "compute-node.configMapName" . }}
+        - secretRef:
+            name: {{ include "compute-node.secretName" . }}
+        resources:
+          {{- toYaml .Values.server.resources | nindent 10 }}
+        volumeMounts:
+        - name: data
+          mountPath: {{ .Values.server.env.DATA_DIR }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: admin
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: admin
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ include "compute-node.storageVolumeName" . }}
+{{- end }}

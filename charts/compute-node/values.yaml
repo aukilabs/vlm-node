@@ -1,0 +1,131 @@
+# Default values for compute-node
+# This is a YAML-formatted file.
+
+# Service Account configuration
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# Server configuration
+server:
+  enabled: true
+  replicas: 1
+  image:
+    repository: your-registry/compute-node
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  ports:
+    main: 8080
+    admin: 18190
+  env:
+    SERVER_PORT: 8080
+    SERVER_ADMIN_PORT: 18190
+    DATA_DIR: /data
+
+# Worker configuration
+worker:
+  enabled: true
+  replicas: 1
+  image:
+    repository: your-registry/compute-node
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+# UI configuration
+ui:
+  enabled: true
+  replicas: 1
+  port: 3000
+  image:
+    repository: your-registry/compute-node-ui
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+# Database configuration
+postgresql:
+  # If true, the PostgreSQL dependency is enabled
+  enabled: true
+  global:
+    # defaultStorageClass: ""
+    postgresql:
+      auth:
+        username: compute-node
+        password: compute-node
+        database: compute-node
+  primary:
+    networkPolicy:
+      enabled: false
+    resources:
+      limits:
+        cpu: 1
+        memory: 256Mi
+        ephemeral-storage: 2Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+        ephemeral-storage: 50Mi
+  fullnameOverride: "compute-node-postgresql"
+
+# Storage configuration
+storage:
+  enabled: true
+  storageClass: "gp2"  # Default to gp2, can be overridden for other clouds
+  size: "100Gi"
+  accessMode: ReadWriteOnce
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  hosts:
+    - host: "{{ .Values.nodeName }}.your-domain.com"
+      paths:
+        - path: /api
+          pathType: Prefix
+          serviceName: "{{ .Values.nodeName }}-server"
+          servicePort: 8080
+        - path: /
+          pathType: Prefix
+          serviceName: "{{ .Values.nodeName }}-ui"
+          servicePort: 3000
+
+# Service configuration
+service:
+  type: ClusterIP
+  annotations: {}
+
+# Security configuration
+security:
+  createSecret: true
+  existingSecretName: ""
+  appKey: "changeme"
+  appSecret: "changeme"
+
+# Labels and annotations
+labels: {}
+annotations: {}
