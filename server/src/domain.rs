@@ -23,7 +23,7 @@ pub async fn download_for_job(
             return Err(e.into());
         }
 
-        let file_name = format!("{}_{}.{}", data.id, data.name, data.data_type);
+        let file_name = format!("{}_{}.{}", data.name, data.id, data.data_type);
         let file_path = Path::new(&dir_path).join(file_name);
 
         // Assume data.data is a Vec<u8> or something that can be written as bytes

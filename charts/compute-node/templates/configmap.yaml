@@ -11,3 +11,6 @@ data:
   DATA_DIR: "/data"
   LOG_LEVEL: "info"
   RUST_LOG: "info"
+  API_URL: "https://api.auki.network"
+  DDS_URL: "https://dds.auki.network"
+  CLIENT_ID: "task-timing-node"

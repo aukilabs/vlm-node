@@ -24,9 +24,9 @@ async fn create_job(
                 return HttpResponse::BadRequest().body("No image ids provided");
             }
             let count = crate::domain::download_for_job(&domain_client, &id, &input.domain_id, &data_dir, &DownloadQuery {
-                ids: vec![],
+                ids: input.image_ids,
                 name: None,
-                data_type: Some("photo_upload".to_string()),
+                data_type: None,
             }).await;
             if let Err(e) = count {
                 tracing::error!("Failed to download domain data: {:?}", e);

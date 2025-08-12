@@ -499,7 +499,7 @@
             const webhookUrl = document.getElementById('submit-webhook-url').value.trim();
             const domainId = document.getElementById('submit-domain-id').value.trim();
             
-            if (!vlmPrompt || !prompt || !imageIds || !webhookUrl || !domainId) {
+            if (!vlmPrompt || !imageIds || !domainId) {
                 showSubmitStatus('Please fill in all required fields', 'error');
                 return;
             }
@@ -585,7 +585,7 @@
             const prompt = document.getElementById('retry-prompt').value.trim();
             const webhookUrl = document.getElementById('retry-webhook-url').value.trim();
             
-            if (!vlmPrompt || !prompt || !webhookUrl) {
+            if (!vlmPrompt) {
                 showRetryStatus('Please fill in all required fields', 'error');
                 return;
             }
