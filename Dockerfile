@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM python:3.11-slim-bookworm
 
 ARG TARGETPLATFORM TARGETARCH TARGETOS
 # Install dependencies: curl, python3, pip, libpq-dev, git, ca-certificates
@@ -6,8 +6,6 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       ca-certificates \
       curl \
-      python3 \
-      python3-pip \
       libpq-dev \
       git \
       && rm -rf /var/lib/apt/lists/*
@@ -20,7 +18,7 @@ WORKDIR /app
 
 # Copy Python code + requirements, install deps
 COPY ai/requirements.txt .
-RUN pip3 install --upgrade pip && pip3 install -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY ai/main.py ai/worker.py ./
 
 # Copy Rust server binary and migrations
