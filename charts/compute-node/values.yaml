@@ -40,11 +40,11 @@ worker:
     pullPolicy: IfNotPresent
   resources:
     requests:
-      memory: "512Mi"
-      cpu: "500m"
+      memory: "125Mi"
+      cpu: "100m"
     limits:
-      memory: "1Gi"
-      cpu: "1000m"
+      memory: "256Mi"
+      cpu: "200m"
 
 # UI configuration
 ui:
