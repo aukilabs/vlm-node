@@ -243,12 +243,12 @@
     </div>
 
     <!-- Submit Job Dialog -->
-    <div id="submit-dialog-overlay" class="dialog-overlay" onclick="closeSubmitDialog()">
+    <div id="submit-dialog-overlay" class="dialog-overlay" onclick="closeSubmitDialog(true)">
         <div class="dialog" onclick="event.stopPropagation()">
             <div class="dialog-header">
                 <h3 class="dialog-title">Submit New Job</h3>
                 <div class="dialog-buttons">
-                    <button class="btn btn-secondary" onclick="closeSubmitDialog()">Cancel</button>
+                    <button class="btn btn-secondary" onclick="closeSubmitDialog(true)">Cancel</button>
                     <button class="btn btn-primary" onclick="submitJob()">Submit</button>
                 </div>
             </div>
@@ -290,12 +290,12 @@
     </div>
 
     <!-- Retry Job Dialog -->
-    <div id="retry-dialog-overlay" class="dialog-overlay" onclick="closeRetryDialog()">
+    <div id="retry-dialog-overlay" class="dialog-overlay" onclick="closeRetryDialog(true)">
         <div class="dialog" onclick="event.stopPropagation()">
             <div class="dialog-header">
                 <h3 class="dialog-title">Retry Job</h3>
                 <div class="dialog-buttons">
-                    <button class="btn btn-secondary" onclick="closeRetryDialog()">Cancel</button>
+                    <button class="btn btn-secondary" onclick="closeRetryDialog(true)">Cancel</button>
                     <button class="btn btn-primary" onclick="retryJob()">Submit</button>
                 </div>
             </div>
@@ -476,8 +476,8 @@
             clearSubmitForm();
         }
 
-        function closeSubmitDialog() {
-            if (confirm('Are you sure you want to close this dialog? Any unsaved changes will be lost.')) {
+        function closeSubmitDialog(shouldConfirm = true) {
+            if (!shouldConfirm || confirm('Are you sure you want to close this dialog? Any unsaved changes will be lost.')) {
                 document.getElementById('submit-dialog-overlay').style.display = 'none';
                 clearSubmitForm();
             }
@@ -527,7 +527,7 @@
                 if (response.ok) {
                     showSubmitStatus('Job submitted successfully!', 'success');
                     setTimeout(() => {
-                        closeSubmitDialog();
+                        closeSubmitDialog(false);
                         loadJobs();
                     }, 1000);
                 } else {
@@ -573,9 +573,11 @@
             document.getElementById('retry-status-message').style.display = 'none';
         }
 
-        function closeRetryDialog() {
-            document.getElementById('retry-dialog-overlay').style.display = 'none';
-            currentRetryJobId = null;
+        function closeRetryDialog(shouldConfirm = true) {
+            if (!shouldConfirm || confirm('Are you sure you want to close this dialog? Any unsaved changes will be lost.')) {
+                document.getElementById('retry-dialog-overlay').style.display = 'none';
+                currentRetryJobId = null;
+            }
         }
 
         async function retryJob() {
@@ -613,7 +615,7 @@
                 if (response.ok) {
                     showRetryStatus('Job updated successfully!', 'success');
                     setTimeout(() => {
-                        closeRetryDialog();
+                        closeRetryDialog(false);
                         loadJobs();
                     }, 1000);
                 } else {

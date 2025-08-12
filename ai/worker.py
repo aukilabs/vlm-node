@@ -42,29 +42,38 @@ def complete_job(conn, job_id):
         """, (job_id,))
         conn.commit()
 
+import re
+
 def parse_image_id(image_path):
     """
-    Extracts the id from an image path of the form "/xxx/xxxx/{timestamp}_{id}.{data_type}"
-    Example: "/data/input/2025-08-04T10-09-49-186Z_abc123.png" -> "abc123"
+    Extracts a UUIDv4 id from an image path using regexp.
+    Looks for a UUIDv4 pattern in the filename.
+    Example: "/data/input/photo_photo_req_1754816076435_617bqy2_20250810_165440_617bqy2.jpg" -> "617bqy2" (if it's a UUIDv4)
     """
     import os
     filename = os.path.basename(image_path)
-    if "_" in filename:
-        id_part = filename.split("_")[2]
-        return id_part
-    return None
+    # UUIDv4 regex: 8-4-4-4-12 hex digits
+    match = re.search(
+        r'([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12})',
+        filename
+    )
+    if match:
+        return match.group(1)
+    return ""
 
 def parse_image_timestamp(image_path):
     """
-    Extracts the timestamp from an image path of the form "/xxx/xxxx/{timestamp}_{id}.{data_type}"
-    Example: "/data/input/2025-08-04T10-09-49-186Z_abc123.png" -> "2025-08-04T10-09-49-186Z"
+    Extracts the timestamp from an image path using regexp.
+    Tries to find a pattern like "_{timestamp}_" or "_{timestamp}." in the filename.
+    Example: "/data/input/photo_photo_req_1754816076435_617bqy2_20250810_165440.jpg" -> "20250810_165440"
     """
     import os
     filename = os.path.basename(image_path)
-    if "_" in filename:
-        timestamp_part = filename.split("_")[0]
-        return timestamp_part
-    return None
+    # Try to match a timestamp pattern like 8 digits + underscore + 6 digits (e.g., 20250810_165440)
+    match = re.search(r'_(?P<ts>\d{8}_\d{6})(?:_|\.|$)', filename)
+    if match:
+        return match.group('ts')
+    return ""
 
 class TaskTiming(BaseModel):
     start_image: str
@@ -76,7 +85,7 @@ def run_inference(vlm_prompt, prompt, image_paths):
     model = os.environ.get("MODEL", "gemma3:4b")
 
     print(f"[Worker] Running inference for {len(image_paths)} images: {image_paths}")
-    results = "timestamp,event\n"
+    results = "id,timestamp,event\n"
 
     for image_path in image_paths:
         print(f"[Worker] Image path: {image_path}")
@@ -86,14 +95,14 @@ def run_inference(vlm_prompt, prompt, image_paths):
                 {"role": "user", "content": vlm_prompt, "images": [image_path]}
             ],
         )
-        results += '"' + parse_image_timestamp(image_path) + '",' + '"' + res.message.content + '"\n'
+        results += '"' + parse_image_id(image_path) + '",' + '"' + parse_image_timestamp(image_path) + '",' + '"' + res.message.content + '"\n'
         print(f"[Worker] Inference output: {res}")
 
     print(f"[Worker] Inference completed")
 
     # Compose a prompt for temporal reasoning
     temporal_prompt = (
-        "Given the timeline in the format of timestamp,event" + "\n" +
+        "Given the timeline in the format of id,timestamp,event" + "\n" +
         "Timeline:" + results + "\n" +
         prompt
     )

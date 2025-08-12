@@ -12,7 +12,7 @@ server:
   enabled: true
   replicas: 1
   image:
-    repository: your-registry/compute-node
+    repository: 026987513085.dkr.ecr.us-east-1.amazonaws.com/task-timing-node-server
     tag: "latest"
     pullPolicy: IfNotPresent
   resources:
@@ -35,7 +35,7 @@ worker:
   enabled: true
   replicas: 1
   image:
-    repository: your-registry/compute-node
+    repository: 026987513085.dkr.ecr.us-east-1.amazonaws.com/task-timing-node-worker
     tag: "latest"
     pullPolicy: IfNotPresent
   resources:
@@ -52,7 +52,7 @@ ui:
   replicas: 1
   port: 3000
   image:
-    repository: your-registry/compute-node-ui
+    repository: 026987513085.dkr.ecr.us-east-1.amazonaws.com/task-timing-node-ui
     tag: "latest"
     pullPolicy: IfNotPresent
   resources:
