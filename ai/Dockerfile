@@ -7,6 +7,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     git \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install ollama and pull the models
@@ -19,4 +20,4 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY main.py worker.py ./
 
-CMD ollama serve & python main.py
+CMD python main.py
