@@ -8,6 +8,7 @@ on:
       - '.github/workflows/rust-workflow.yml'
       - 'ai/**'
       - '.github/workflows/build-server-worker.yml'
+      - 'Dockerfile'
 
 concurrency:
   group: build-server-${{ github.ref }}
