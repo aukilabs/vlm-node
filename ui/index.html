@@ -409,9 +409,13 @@
                  <div id="view-output" class="json-display"></div>
              </div>
          </div>
-     </div>
- 
-     <script>
+         </div>
+
+    <script src="config.js"></script>
+    <script>
+        // Get server URL with fallback to localhost
+        const serverUrl = window.APP_CONFIG?.serverUrl != "%%SERVER_URL%%" ? window.APP_CONFIG?.serverUrl : 'http://localhost:8080';
+        
         let currentRetryJobId = null;
 
         // Load jobs on page load
@@ -421,7 +425,7 @@
 
         async function loadJobs() {
             try {
-                const response = await fetch('http://localhost:8080/jobs?limit=100', {
+                const response = await fetch(`${serverUrl}/jobs?limit=100`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -512,7 +516,7 @@
             };
 
             try {
-                const response = await fetch('http://localhost:8080/jobs', {
+                const response = await fetch(`${serverUrl}/jobs`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -598,7 +602,7 @@
             };
 
             try {
-                const response = await fetch(`http://localhost:8080/jobs/${currentRetryJobId}`, {
+                const response = await fetch(`${serverUrl}/jobs/${currentRetryJobId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -640,13 +644,13 @@
          }
          
          async function openViewDialog(jobId) {
-             try {
-                 const response = await fetch(`http://localhost:8080/jobs/${jobId}`, {
-                     method: 'GET',
-                     headers: {
-                         'Content-Type': 'application/json',
-                     }
-                 });
+                         try {
+                const response = await fetch(`${serverUrl}/jobs/${jobId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
                  if (response.ok) {
                      const job = await response.json();
                      populateViewForm(job);

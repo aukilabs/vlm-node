@@ -1,0 +1,56 @@
+name: Build Worker
+
+on:
+  push:
+    branches: [ main, 'feature/*', 'fix/*', 'chore/*' ]
+    paths:
+      - 'ai/**'
+      - '.github/workflows/build-worker.yml'
+
+concurrency:
+  group: build-worker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.GLOBAL_COMMON_AWS_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.GLOBAL_COMMON_AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.GLOBAL_COMMON_AWS_REGION }}
+        
+    - name: Login to Amazon ECR
+      id: ecr-login
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build Docker metadata
+      id: docker-metadata
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ steps.ecr-login.outputs.registry }}/task-timing-node-worker
+        tags: |
+          type=sha,format=long,prefix=
+          type=raw,enable={{is_not_default_branch}},value={{branch}}
+          type=raw,enable={{is_default_branch}},value=latest
+          type=raw,enable=${{ inputs.extra_tag != '' }},value=${{ inputs.extra_tag }}
+          type=match,pattern=(\w+-)?(v\d+\.\d+\.\d+),group=2
+          type=match,pattern=(\w+-)?(v\d+\.\d+),group=2
+          type=match,pattern=(\w+-)?(v\d+),group=2
+      
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ai
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.docker-metadata.outputs.tags }}

@@ -8,15 +8,19 @@ on:
       - '.github/workflows/rust-workflow.yml'
       - '.github/workflows/build-server.yml'
 
+concurrency:
+  group: build-server-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     uses: ./.github/workflows/rust-workflow.yml
     with:
-      work_dir: ./server
+      work_dir: server
       enable_build: true
       enable_test: false
-      image_name: vlm-server
+      image_name: task-timing-node-server
+      aws_region: ${{ vars.GLOBAL_COMMON_AWS_REGION }}
     secrets:
-      aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      aws_region: ${{ secrets.AWS_REGION }}
+      aws_access_key: ${{ secrets.GLOBAL_COMMON_AWS_ACCESS_KEY }}
+      aws_secret_access_key: ${{ secrets.GLOBAL_COMMON_AWS_SECRET_ACCESS_KEY }}

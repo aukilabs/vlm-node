@@ -1,6 +1,8 @@
 {{- if .Values.ingress.enabled -}}
-{{- $fullName := include "compute-node.fullname" . -}}
-{{- $svcPort := .Values.service.port -}}
+{{- $serverServiceName := include "compute-node.serverServiceName" . -}}
+{{- $uiServiceName := include "compute-node.uiServiceName" . -}}
+{{- $serverPort := .Values.server.ports.main -}}
+{{- $uiPort := .Values.ui.port -}}
 {{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
   {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.className}}
@@ -15,7 +17,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ $fullName }}
+  name: {{ include "compute-node.ingressName" . }}
   labels:
     {{- include "compute-node.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
@@ -41,21 +43,33 @@ spec:
     - host: {{ .host | quote }}
       http:
         paths:
-          {{- range .paths }}
-          - path: {{ .path }}
+          - path: /api
             {{- if and .pathType (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
-            pathType: {{ .pathType }}
+            pathType: Prefix
             {{- end }}
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: {{ $fullName }}
+                name: {{ $serverServiceName }}
                 port:
-                  number: {{ $svcPort }}
+                  number: {{ $serverPort }}
               {{- else }}
-              serviceName: {{ $fullName }}
-              servicePort: {{ $svcPort }}
+              serviceName: {{ $serverServiceName }}
+              servicePort: {{ $serverPort }}
               {{- end }}
-          {{- end }}
+          - path: /
+            {{- if and .pathType (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
+            pathType: Prefix
+            {{- end }}
+            backend:
+              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+              service:
+                name: {{ $uiServiceName }}
+                port:
+                  number: {{ $uiPort }}
+              {{- else }}
+              serviceName: {{ $uiServiceName }}
+              servicePort: {{ $uiPort }}
+              {{- end }}
     {{- end }}
 {{- end }}

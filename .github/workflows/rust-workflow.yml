@@ -94,7 +94,6 @@ jobs:
             ${{ runner.os }}-cargo-registry-
 
       - name: Run tests
-        working-directory: ${{ inputs.work_dir }}
         env:
           ${{ fromJSON(env.test_env_vars) }}
         run: |
@@ -131,7 +130,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-bin-
       - name: Build binary
-        working-directory: ${{ inputs.work_dir }}
         env:
           TARGETPLATFORM: ${{ matrix.platform }}
           CLIENT: ${{ matrix.client_config.client }}
@@ -216,7 +214,8 @@ jobs:
           images: ${{ steps.ecr-login.outputs.registry }}/${{ env.IMAGE_NAME }}
           tags: |
             type=sha,format=long,prefix=
-            type=ref,event=branch
+            type=raw,enable={{is_not_default_branch}},value={{branch}}
+            type=raw,enable={{is_default_branch}},value=latest
             type=raw,enable=${{ inputs.extra_tag != '' }},value=${{ inputs.extra_tag }}
             type=match,pattern=(\w+-)?(v\d+\.\d+\.\d+),group=2
             type=match,pattern=(\w+-)?(v\d+\.\d+),group=2
