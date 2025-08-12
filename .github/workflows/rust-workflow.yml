@@ -171,8 +171,8 @@ jobs:
             mv "$dir" "${{ inputs.work_dir }}/target/${subdir_name}"
           done
           ls -la ${{ inputs.work_dir }}/target
-          ls -la ${{ inputs.work_dir }}/target/linux-amd64
-          ls -la ${{ inputs.work_dir }}/target/linux-arm64
+          ls -la ${{ inputs.work_dir }}/target/linux-amd64/release
+          ls -la ${{ inputs.work_dir }}/target/linux-arm64/release
       
       - name: Configure environment
         run: |

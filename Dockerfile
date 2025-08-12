@@ -24,7 +24,7 @@ RUN pip3 install --upgrade pip && pip3 install -r requirements.txt
 COPY ai/main.py ai/worker.py ./
 
 # Copy Rust server binary and migrations
-COPY target/${TARGETOS}-${TARGETARCH}/release/server /app/server
+COPY server/target/${TARGETOS}-${TARGETARCH}/release/server /app/server
 COPY server/migrations /app/migrations
 ENV MIGRATIONS_PATH=/app/migrations
 

@@ -140,14 +140,18 @@ async fn retry_job(
 }
 
 pub fn app_config(cfg: &mut web::ServiceConfig) {
+    use actix_web::middleware::Logger;
+
     cfg
         .service(
             web::resource("/api/v1/jobs")
+                .wrap(Logger::default())
                 .route(web::post().to(create_job))
                 .route(web::get().to(list_jobs))
         )
         .service(
             web::resource("/api/v1/jobs/{id}")
+                .wrap(Logger::default())
                 .route(web::get().to(get_job))
                 .route(web::put().to(retry_job))
         );
