@@ -224,6 +224,7 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
+          context: .
           tags: ${{ steps.docker-metadata.outputs.tags }}
 
       - name: Wait for ECR image replication

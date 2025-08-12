@@ -25,6 +25,7 @@ COPY ai/main.py ai/worker.py ./
 
 # Copy Rust server binary and migrations
 COPY server/target/${TARGETOS}-${TARGETARCH}/release/server /app/server
+RUN chmod +x /app/server
 COPY server/migrations /app/migrations
 ENV MIGRATIONS_PATH=/app/migrations
 
