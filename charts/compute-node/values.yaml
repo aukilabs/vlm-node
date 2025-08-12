@@ -106,10 +106,10 @@ ingress:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
   hosts:
-    - host: "compute-node"
+    - compute-node
   tls:
     - hosts:
-        - "compute-node"
+        - compute-node
 
 # Service configuration
 service:
