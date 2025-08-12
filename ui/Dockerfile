@@ -12,6 +12,10 @@ RUN apk add --no-cache \
 
 # Copy nginx configuration
 COPY nginx-default.conf /etc/nginx/conf.d/default.conf
+# Print the contents of the nginx config for debugging
+RUN echo "----- /etc/nginx/conf.d/default.conf -----" && \
+    cat /etc/nginx/conf.d/default.conf && \
+    echo "------------------------------------------"
 
 # Copy static files
 COPY index.html /usr/share/nginx/html/
