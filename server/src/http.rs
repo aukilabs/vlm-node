@@ -142,12 +142,12 @@ async fn retry_job(
 pub fn app_config(cfg: &mut web::ServiceConfig) {
     cfg
         .service(
-            web::resource("/jobs")
+            web::resource("/api/v1/jobs")
                 .route(web::post().to(create_job))
                 .route(web::get().to(list_jobs))
         )
         .service(
-            web::resource("/jobs/{id}")
+            web::resource("/api/v1/jobs/{id}")
                 .route(web::get().to(get_job))
                 .route(web::put().to(retry_job))
         );

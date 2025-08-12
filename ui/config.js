@@ -16,7 +16,7 @@ window.APP_CONFIG = {
             window.APP_CONFIG.serverUrl = 'http://localhost:8080';
         } else {
             // Production: use current web URL + /api
-            window.APP_CONFIG.serverUrl = `${currentUrl}/api`;
+            window.APP_CONFIG.serverUrl = `${currentUrl}/api/v1`;
         }
         
         console.log('Auto-detected server URL:', window.APP_CONFIG.serverUrl);
