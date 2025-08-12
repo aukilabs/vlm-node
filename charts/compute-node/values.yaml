@@ -14,7 +14,7 @@ server:
   image:
     repository: 026987513085.dkr.ecr.us-east-1.amazonaws.com/task-timing-node-server
     tag: "latest"
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   resources:
     requests:
       memory: "256Mi"
@@ -34,7 +34,7 @@ ui:
   image:
     repository: 026987513085.dkr.ecr.us-east-1.amazonaws.com/task-timing-node-ui
     tag: "latest"
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   resources:
     requests:
       memory: "128Mi"
