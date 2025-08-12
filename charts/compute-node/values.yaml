@@ -118,8 +118,8 @@ service:
 
 # Security configuration
 security:
-  createSecret: true
-  existingSecretName: ""
+  createSecret: false
+  existingSecretName: "task-timing-node"
   appKey: "changeme"
   appSecret: "changeme"
 
