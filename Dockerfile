@@ -14,7 +14,7 @@ RUN apt-get update && \
 
 # Install Ollama & pull models
 RUN curl -fsSL https://ollama.com/install.sh | sh
-RUN ollama pull llava:7b && ollama pull llama3
+RUN ollama serve & sleep 5 && ollama pull llava:7b && ollama pull llama3
 
 WORKDIR /app
 
@@ -35,7 +35,6 @@ RUN groupadd -g 101 compute-node && \
     chown -R compute-node:compute-node /app
 
 USER compute-node
-WORKDIR /app
 
 # Run the Rust server as main process, and Python worker in background
-CMD sh -c "python3 main.py & exec /app/server"
+CMD ["sh", "-c", "python3 main.py & exec /app/server"]
