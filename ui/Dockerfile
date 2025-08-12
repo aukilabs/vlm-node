@@ -1,6 +1,10 @@
 # Use nginx alpine as base image
 FROM nginx:alpine
 
+# Build arguments
+ARG SERVER_URL=http://localhost:8080
+ENV SERVER_URL=$SERVER_URL
+
 # Install necessary packages
 RUN apk add --no-cache \
     curl \
@@ -14,6 +18,9 @@ COPY index.html /usr/share/nginx/html/
 COPY *.js /usr/share/nginx/html/ 2>/dev/null || true
 COPY *.css /usr/share/nginx/html/ 2>/dev/null || true
 COPY assets/ /usr/share/nginx/html/assets/ 2>/dev/null || true
+
+# Replace placeholder in config.js with build arg
+RUN sed -i "s|%%SERVER_URL%%|$SERVER_URL|g" /usr/share/nginx/html/config.js
 
 # Create a non-root user
 RUN addgroup -g 1001 -S nginx && \

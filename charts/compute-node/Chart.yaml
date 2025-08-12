@@ -1,21 +1,9 @@
 apiVersion: v2
-name: compute-node
+name: task-timing-node
 description: A Helm chart for compute nodes (SLAM, task-timing, etc.)
 type: application
 version: 0.1.0
 appVersion: "1.0.0"
-keywords:
-  - compute
-  - ai
-  - worker
-  - server
-home: https://github.com/your-org/compute-node
-sources:
-  - https://github.com/your-org/compute-node
-maintainers:
-  - name: Your Name
-    email: your.email@example.com
-
 dependencies:
   - name: postgresql
     version: "15.4.2"

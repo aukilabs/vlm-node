@@ -54,7 +54,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Node-specific labels
 */}}
 {{- define "compute-node.nodeLabels" -}}
-compute-node/type: {{ include "compute-node.name" . }}
+compute-node/type: {{ include "compute-node.fullname" . }}
 {{ include "compute-node.labels" . }}
 {{- end }}
 
@@ -62,7 +62,7 @@ compute-node/type: {{ include "compute-node.name" . }}
 Node-specific selector labels
 */}}
 {{- define "compute-node.nodeSelectorLabels" -}}
-compute-node/type: {{ include "compute-node.name" . }}
+compute-node/type: {{ include "compute-node.fullname" . }}
 {{ include "compute-node.selectorLabels" . }}
 {{- end }}
 
