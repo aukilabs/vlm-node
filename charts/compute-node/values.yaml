@@ -25,26 +25,6 @@ server:
   ports:
     main: 8080
     admin: 18190
-  env:
-    SERVER_PORT: 8080
-    SERVER_ADMIN_PORT: 18190
-    DATA_DIR: /data
-
-# Worker configuration
-worker:
-  enabled: true
-  replicas: 1
-  image:
-    repository: 026987513085.dkr.ecr.us-east-1.amazonaws.com/task-timing-node-worker
-    tag: "latest"
-    pullPolicy: IfNotPresent
-  resources:
-    requests:
-      memory: "125Mi"
-      cpu: "100m"
-    limits:
-      memory: "256Mi"
-      cpu: "200m"
 
 # UI configuration
 ui:
@@ -95,6 +75,7 @@ storage:
   storageClass: "gp2"  # Default to gp2, can be overridden for other clouds
   size: "100Gi"
   accessMode: ReadWriteOnce
+  mountPath: /data
 
 # Ingress configuration
 ingress:

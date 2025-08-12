@@ -13,6 +13,9 @@ COPY nginx-default.conf /etc/nginx/conf.d/default.conf
 COPY index.html /usr/share/nginx/html/
 COPY config.js /usr/share/nginx/html/config.js
 
+RUN cat /etc/nginx/conf.d/default.conf
+RUN cat /usr/share/nginx/html/config.js
+
 # Expose port 3000
 EXPOSE 3000
 

@@ -78,13 +78,6 @@ Server StatefulSet name
 {{- end }}
 
 {{/*
-Worker StatefulSet name
-*/}}
-{{- define "compute-node.workerStatefulSetName" -}}
-{{- printf "%s-worker" (include "compute-node.fullname" .) }}
-{{- end }}
-
-{{/*
 UI Deployment name
 */}}
 {{- define "compute-node.uiDeploymentName" -}}
@@ -96,13 +89,6 @@ Server Service name
 */}}
 {{- define "compute-node.serverServiceName" -}}
 {{- printf "%s-server" (include "compute-node.fullname" .) }}
-{{- end }}
-
-{{/*
-Worker Service name
-*/}}
-{{- define "compute-node.workerServiceName" -}}
-{{- printf "%s-worker" (include "compute-node.fullname" .) }}
 {{- end }}
 
 {{/*

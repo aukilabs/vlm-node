@@ -16,32 +16,5 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
-  ai:
-    build:
-      context: ./ai
-      dockerfile: Dockerfile
-    env_file:
-      - .env
-      - .env.local
-    depends_on:
-      postgres:
-        condition: service_healthy
-  server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    env_file:
-      - .env
-      - .env.local
-    command: >
-      sh -c "
-        ./app/server
-      "
-    ports:
-      - "${SERVER_PORT:-8080}:8080"
-      - "${SERVER_ADMIN_PORT:-18190}:18190"
-    depends_on:
-      postgres:
-        condition: service_healthy
 volumes:
   postgres_data:

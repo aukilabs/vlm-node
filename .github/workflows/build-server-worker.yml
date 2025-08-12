@@ -6,7 +6,8 @@ on:
     paths:
       - 'server/**'
       - '.github/workflows/rust-workflow.yml'
-      - '.github/workflows/build-server.yml'
+      - 'ai/**'
+      - '.github/workflows/build-server-worker.yml'
 
 concurrency:
   group: build-server-${{ github.ref }}

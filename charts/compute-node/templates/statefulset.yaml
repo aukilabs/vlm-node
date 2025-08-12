@@ -46,7 +46,7 @@ spec:
           {{- toYaml .Values.server.resources | nindent 10 }}
         volumeMounts:
         - name: data
-          mountPath: {{ .Values.server.env.DATA_DIR }}
+          mountPath: {{ .Values.storage.mountPath }}
         livenessProbe:
           httpGet:
             path: /health

@@ -23,27 +23,6 @@ spec:
     app.kubernetes.io/component: server
 {{- end }}
 
-{{- if .Values.worker.enabled }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "compute-node.workerServiceName" . }}
-  labels:
-    {{- include "compute-node.nodeLabels" . | nindent 4 }}
-    app.kubernetes.io/component: worker
-spec:
-  type: ClusterIP
-  ports:
-  - name: health
-    port: 8080
-    targetPort: 8080
-    protocol: TCP
-  selector:
-    {{- include "compute-node.nodeSelectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: worker
-{{- end }}
-
 {{- if .Values.ui.enabled }}
 ---
 apiVersion: v1
