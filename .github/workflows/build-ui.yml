@@ -47,8 +47,6 @@ jobs:
       with:
         context: ui
         push: true
-        build-args: |
-          SERVER_URL=https://task-timing-node.dev.aukiverse.com/api
         tags: ${{ steps.docker-metadata.outputs.tags }}
 
   deploy:

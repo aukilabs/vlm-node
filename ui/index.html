@@ -414,7 +414,7 @@
     <script src="config.js"></script>
     <script>
         // Get server URL with fallback to localhost
-        const serverUrl = window.APP_CONFIG?.serverUrl != "%%SERVER_URL%%" ? window.APP_CONFIG?.serverUrl : 'http://localhost:8080';
+        const serverUrl = window.APP_CONFIG.serverUrl;
         
         let currentRetryJobId = null;
 
