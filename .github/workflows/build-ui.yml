@@ -34,7 +34,7 @@ jobs:
       id: docker-metadata
       uses: docker/metadata-action@v5
       with:
-        images: ${{ steps.ecr-login.outputs.registry }}/task-timing-node-ui
+        images: ${{ steps.ecr-login.outputs.registry }}/vlm-node-ui
         tags: |
           type=sha,format=long,prefix=
           type=raw,enable={{is_not_default_branch}},value={{branch}}
@@ -63,10 +63,10 @@ jobs:
       - name: Sync ArgoCD app
         uses: clowdhaus/argo-cd-action/@v2.3.0
         with:
-          command: app sync task-timing-node
+          command: app sync vlm-node
           options: --grpc-web --async
       - name: Restart ArgoCD app
         uses: clowdhaus/argo-cd-action/@v2.3.0
         with:
-          command: app actions run task-timing-node restart
-          options: --kind Deployment --resource-name task-timing-node --grpc-web
+          command: app actions run vlm-node restart
+          options: --kind Deployment --resource-name vlm-node --grpc-web

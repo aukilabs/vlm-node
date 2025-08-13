@@ -21,6 +21,10 @@ spec:
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "compute-node.serviceAccountName" . }}
       {{- end }}
+      {{- if .Values.server.tolerations }}
+      tolerations:
+        {{- toYaml .Values.server.tolerations | nindent 8 }}
+      {{- end }}
       containers:
       - name: server
         image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
