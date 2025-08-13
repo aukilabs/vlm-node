@@ -162,6 +162,12 @@ jobs:
           path: /tmp/artifacts
           pattern: ${{ matrix.client_config.client }}-*
 
+      - name: Free up space
+        run: |
+          sudo sudo rm -rf /usr/share/dotnet  # ~20GB
+          sudo rm -rf /opt/ghc           # ~4GB
+          sudo rm -rf /usr/local/lib/android  # ~10GB
+
       - name: Combine target directories
         run: |
           mkdir -p ${{ inputs.work_dir }}/target
@@ -170,9 +176,6 @@ jobs:
             subdir_name=$(basename "$dir" | cut -d'-' -f2-)
             mv "$dir" "${{ inputs.work_dir }}/target/${subdir_name}"
           done
-          ls -la ${{ inputs.work_dir }}/target
-          ls -la ${{ inputs.work_dir }}/target/linux-amd64/release
-          ls -la ${{ inputs.work_dir }}/target/linux-arm64/release
       
       - name: Configure environment
         run: |
