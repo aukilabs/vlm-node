@@ -9,6 +9,8 @@ RUN apt-get update && \
       ca-certificates \
       curl \
       libpq-dev \
+      gnupg \
+      git \
       && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
@@ -44,4 +46,4 @@ RUN groupadd -g 101 compute-node && \
 USER compute-node
 
 # Run the Rust server as main process, and Python worker in background
-CMD ["sh", "-c", "python3 main.py & exec /app/server"]
+CMD ["sh", "-c", "python main.py & exec /app/server"]
