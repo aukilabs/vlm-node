@@ -4,20 +4,22 @@ ARG TARGETPLATFORM TARGETARCH TARGETOS
 # Install Python and dependencies for NVIDIA base image
 RUN apt-get update && \
       apt-get install -y --no-install-recommends \
-        python3-pip \
         ca-certificates \
+        python3 \
+        python3-venv \
         libpq-dev \
         git \
         tini \
-        && rm -rf /var/lib/apt/lists/* \
-        && ln -s /usr/bin/python3.12 /usr/bin/python \
-        && ln -s /usr/bin/python3.12 /usr/bin/python3 \
-        && ln -s /usr/bin/pip3 /usr/bin/pip;rm -rf /var/lib/apt/lists/*; \
+        curl \
+        && rm -rf /var/lib/apt/lists/*;
 
 # Install Ollama (models will be pulled dynamically in Python code)
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
 WORKDIR /app
+
+RUN python3 -m venv /app/venv --system-site-packages
+ENV PATH="/app/venv/bin:$PATH"
 
 # Copy Python code + requirements, install deps
 COPY ai/requirements.txt .
@@ -29,6 +31,8 @@ COPY server/target/${TARGETOS}-${TARGETARCH}/release/server /app/server
 RUN chmod +x /app/server
 COPY server/migrations /app/migrations
 ENV MIGRATIONS_PATH=/app/migrations
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
 # Create user and permissions
 RUN groupadd -g 101 vlm-node && \
@@ -36,9 +40,6 @@ RUN groupadd -g 101 vlm-node && \
     chown -R vlm-node:vlm-node /app
 
 USER vlm-node
-
-COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
 
 # Use tini as entrypoint for proper signal handling
 ENTRYPOINT ["/usr/bin/tini", "--", "/app/docker-entrypoint.sh"]
