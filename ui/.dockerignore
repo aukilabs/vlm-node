@@ -1,13 +1,3 @@
-# Rust
-target/
-
-# Python
-.venv
-
-# Data
-data/
-
-# Node
 # Dependencies
 node_modules/
 npm-debug.log*
@@ -27,7 +17,6 @@ build/
 
 # IDE files
 .vscode/
-.cursor/
 .idea/
 *.swp
 *.swo
@@ -46,8 +35,31 @@ pids
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
+# Coverage directory
 coverage/
 
 # Vite
 .vite/
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Documentation
+README.md
+*.md
+
+# Test files
+**/*.test.js
+**/*.spec.js
+test/
+tests/
+
+# Development tools
+.eslintrc.js
+.prettierrc

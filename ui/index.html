@@ -1,708 +1,299 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Job Runner</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .submit-btn {
-            background-color: #28a745;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        .submit-btn:hover {
-            background-color: #218838;
-        }
-        
-        .retry-btn {
-            background-color: #ffc107;
-            color: #212529;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        .retry-btn:hover {
-            background-color: #e0a800;
-        }
-        
-        .jobs-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        
-        .jobs-table th,
-        .jobs-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .jobs-table th {
-            background-color: #f8f9fa;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .jobs-table tr:hover {
-            background-color: #f5f5f5;
-        }
-        
-        .dialog-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        
-        .dialog {
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-        }
-        
-        .dialog-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .dialog-title {
-            margin: 0;
-            font-size: 20px;
-            color: #333;
-        }
-        
-        .dialog-buttons {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-        
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-        
-        .btn-secondary:hover {
-            background-color: #545b62;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        input[type="text"], textarea, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-        
-        textarea {
-            height: 100px;
-            resize: vertical;
-        }
-        
-        .readonly-field {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            color: #495057;
-        }
-        
-        .status-message {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 4px;
-            display: none;
-        }
-        
-        .status-message.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-                 .status-message.error {
-             background-color: #f8d7da;
-             color: #721c24;
-             border: 1px solid #f5c6cb;
-         }
-         
-         .json-display {
-             background-color: #f8f9fa;
-             border: 1px solid #dee2e6;
-             border-radius: 4px;
-             padding: 10px;
-             font-family: 'Courier New', monospace;
-             font-size: 12px;
-             white-space: pre-wrap;
-             min-height: 100px;
-             max-height: 400px;
-             overflow-y: auto;
-             display: none;
-             resize: vertical;
-         }
-    </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <h1>Job Runner</h1>
-            <button class="submit-btn" onclick="openSubmitDialog()">Submit Job</button>
-        </div>
-        
-        <div id="status-message" class="status-message"></div>
-        
-        <table class="jobs-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Status</th>
-                    <th>Created At</th>
-                    <th>Updated At</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="jobs-tbody">
-                <!-- Jobs will be loaded here -->
-            </tbody>
-        </table>
+      <div class="header">
+        <h1>Job Runner</h1>
+        <button class="submit-btn" onclick="openSubmitDialog()">
+          Submit Job
+        </button>
+      </div>
+
+      <div id="status-message" class="status-message"></div>
+
+      <table class="jobs-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Status</th>
+            <th>Created At</th>
+            <th>Updated At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="jobs-tbody">
+          <!-- Jobs will be loaded here -->
+        </tbody>
+      </table>
     </div>
 
     <!-- Submit Job Dialog -->
-    <div id="submit-dialog-overlay" class="dialog-overlay" onclick="closeSubmitDialog(true)">
-        <div class="dialog" onclick="event.stopPropagation()">
-            <div class="dialog-header">
-                <h3 class="dialog-title">Submit New Job</h3>
-                <div class="dialog-buttons">
-                    <button class="btn btn-secondary" onclick="closeSubmitDialog(true)">Cancel</button>
-                    <button class="btn btn-primary" onclick="submitJob()">Submit</button>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="submit-job-type">Job Type:</label>
-                <select id="submit-job-type" disabled>
-                    <option value="task_timing_v1" selected>Task Timing V1</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="submit-vlm-prompt">VLM Prompt:</label>
-                <textarea id="submit-vlm-prompt" placeholder="How to describe the image?"></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label for="submit-prompt">Prompt:</label>
-                <textarea id="submit-prompt" placeholder="What event to detect?"></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label for="submit-image-ids">Image IDs:</label>
-                <textarea id="submit-image-ids" placeholder="Enter image IDs separated by newlines"></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label for="submit-webhook-url">Webhook URL:</label>
-                <input type="text" id="submit-webhook-url" placeholder="Enter webhook URL">
-            </div>
-            
-            <div class="form-group">
-                <label for="submit-domain-id">Domain ID:</label>
-                <input type="text" id="submit-domain-id" placeholder="Enter domain ID">
-            </div>
-            
-            <div id="submit-status-message" class="status-message"></div>
+    <div
+      id="submit-dialog-overlay"
+      class="dialog-overlay"
+      onclick="closeSubmitDialog(true)"
+    >
+      <div class="dialog">
+        <div class="dialog-header">
+          <h3 class="dialog-title">Submit New Job</h3>
+          <div class="dialog-buttons">
+            <button class="btn btn-primary" onclick="submitJob()">
+              Submit
+            </button>
+          </div>
         </div>
+
+        <div class="form-group">
+          <label for="submit-job-type">Job Type:</label>
+          <select id="submit-job-type" disabled>
+            <option value="task_timing_v1" selected>Task Timing V1</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="submit-vlm-prompt">VLM Prompt:</label>
+          <textarea
+            id="submit-vlm-prompt"
+            placeholder="How to describe the image?"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="submit-prompt">Prompt:</label>
+          <textarea
+            id="submit-prompt"
+            placeholder="What event to detect?"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="submit-image-ids">Image IDs:</label>
+          <textarea
+            id="submit-image-ids"
+            placeholder="Enter image IDs separated by newlines"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="submit-webhook-url">Webhook URL:</label>
+          <input
+            type="text"
+            id="submit-webhook-url"
+            placeholder="Enter webhook URL"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="submit-domain-id">Domain ID:</label>
+          <input
+            type="text"
+            id="submit-domain-id"
+            placeholder="Enter domain ID"
+          />
+        </div>
+
+        <div id="submit-status-message" class="status-message"></div>
+      </div>
     </div>
 
     <!-- Retry Job Dialog -->
-    <div id="retry-dialog-overlay" class="dialog-overlay" onclick="closeRetryDialog(true)">
-        <div class="dialog" onclick="event.stopPropagation()">
-            <div class="dialog-header">
-                <h3 class="dialog-title">Retry Job</h3>
-                <div class="dialog-buttons">
-                    <button class="btn btn-secondary" onclick="closeRetryDialog(true)">Cancel</button>
-                    <button class="btn btn-primary" onclick="retryJob()">Submit</button>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="retry-job-id">Job ID:</label>
-                <input type="text" id="retry-job-id" readonly class="readonly-field">
-            </div>
-            
-            <div class="form-group">
-                <label for="retry-job-status">Status:</label>
-                <input type="text" id="retry-job-status" readonly class="readonly-field">
-            </div>
-            
-            <div class="form-group">
-                <label for="retry-domain-id">Domain ID:</label>
-                <input type="text" id="retry-domain-id" readonly class="readonly-field">
-            </div>
-            
-            <div class="form-group">
-                <label for="retry-image-ids">Image IDs:</label>
-                <textarea id="retry-image-ids" readonly class="readonly-field"></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label for="retry-vlm-prompt">VLM Prompt:</label>
-                <textarea id="retry-vlm-prompt" placeholder="How to describe the image?"></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label for="retry-prompt">Prompt:</label>
-                <textarea id="retry-prompt" placeholder="What event to detect?"></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label for="retry-webhook-url">Webhook URL:</label>
-                <input type="text" id="retry-webhook-url" placeholder="Enter webhook URL">
-            </div>
-            
-            <div id="retry-status-message" class="status-message"></div>
-                 </div>
-     </div>
- 
-     <!-- View Job Dialog -->
-     <div id="view-dialog-overlay" class="dialog-overlay" onclick="closeViewDialog()">
-         <div class="dialog" onclick="event.stopPropagation()">
-             <div class="dialog-header">
-                 <h3 class="dialog-title">View Job Details</h3>
-                 <div class="dialog-buttons">
-                     <button class="btn btn-secondary" onclick="closeViewDialog()">Close</button>
-                 </div>
-             </div>
-             
-             <div class="form-group">
-                 <label for="view-job-id">Job ID:</label>
-                 <input type="text" id="view-job-id" readonly class="readonly-field">
-             </div>
-             
-             <div class="form-group">
-                 <label for="view-job-type">Job Type:</label>
-                 <input type="text" id="view-job-type" readonly class="readonly-field">
-             </div>
-             
-             <div class="form-group">
-                 <label for="view-job-status">Status:</label>
-                 <input type="text" id="view-job-status" readonly class="readonly-field">
-             </div>
-             
-             <div class="form-group">
-                 <label for="view-domain-id">Domain ID:</label>
-                 <input type="text" id="view-domain-id" readonly class="readonly-field">
-             </div>
-             
-             <div class="form-group">
-                 <label for="view-image-ids">Image IDs:</label>
-                 <textarea id="view-image-ids" readonly class="readonly-field"></textarea>
-             </div>
-             
-             <div class="form-group">
-                 <label for="view-vlm-prompt">VLM Prompt:</label>
-                 <textarea id="view-vlm-prompt" readonly class="readonly-field"></textarea>
-             </div>
-             
-             <div class="form-group">
-                 <label for="view-prompt">Prompt:</label>
-                 <textarea id="view-prompt" readonly class="readonly-field"></textarea>
-             </div>
-             
-             <div class="form-group">
-                 <label for="view-webhook-url">Webhook URL:</label>
-                 <input type="text" id="view-webhook-url" readonly class="readonly-field">
-             </div>
-             
-             <div class="form-group">
-                 <label for="view-created-at">Created At:</label>
-                 <input type="text" id="view-created-at" readonly class="readonly-field">
-             </div>
-             
-             <div class="form-group">
-                 <label for="view-updated-at">Updated At:</label>
-                 <input type="text" id="view-updated-at" readonly class="readonly-field">
-             </div>
-             
-             <div class="form-group">
-                 <label for="view-error">Error:</label>
-                 <div id="view-error" class="json-display"></div>
-             </div>
-             
-             <div class="form-group">
-                 <label for="view-output">Output:</label>
-                 <div id="view-output" class="json-display"></div>
-             </div>
-         </div>
-         </div>
+    <div
+      id="retry-dialog-overlay"
+      class="dialog-overlay"
+      onclick="closeRetryDialog(true)"
+    >
+      <div class="dialog">
+        <div class="dialog-header">
+          <h3 class="dialog-title">Retry Job</h3>
+          <div class="dialog-buttons">
+            <button class="btn btn-primary" onclick="retryJob()">Submit</button>
+          </div>
+        </div>
 
-    <script src="config.js"></script>
-    <script>
-        // Get server URL with fallback to localhost
-        const serverUrl = window.APP_CONFIG.serverUrl;
-        
-        let currentRetryJobId = null;
+        <div class="form-group">
+          <label for="retry-job-id">Job ID:</label>
+          <input
+            type="text"
+            id="retry-job-id"
+            readonly
+            class="readonly-field"
+          />
+        </div>
 
-        // Load jobs on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadJobs();
-        });
+        <div class="form-group">
+          <label for="retry-job-status">Status:</label>
+          <input
+            type="text"
+            id="retry-job-status"
+            readonly
+            class="readonly-field"
+          />
+        </div>
 
-        async function loadJobs() {
-            try {
-                const response = await fetch(`${serverUrl}/jobs?limit=100`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-                if (response.ok) {
-                    const jobs = await response.json();
-                    displayJobs(jobs);
-                } else {
-                    showStatus(`Error loading jobs: ${response.status}`, 'error');
-                }
-            } catch (error) {
-                showStatus(`Network error: ${error.message}`, 'error');
-            }
-        }
+        <div class="form-group">
+          <label for="retry-domain-id">Domain ID:</label>
+          <input
+            type="text"
+            id="retry-domain-id"
+            readonly
+            class="readonly-field"
+          />
+        </div>
 
-        function displayJobs(jobs) {
-            const tbody = document.getElementById('jobs-tbody');
-            tbody.innerHTML = '';
-            
-            jobs.forEach(job => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${job.id}</td>
-                    <td>${job.status || 'N/A'}</td>
-                    <td>${formatDate(job.created_at)}</td>
-                    <td>${formatDate(job.updated_at)}</td>
-                                         <td>
-                         <button class="retry-btn" onclick="openRetryDialog('${job.id}')" style="margin-right: 5px;">Retry</button>
-                         <button class="btn btn-primary" onclick="openViewDialog('${job.id}')">View</button>
-                     </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
+        <div class="form-group">
+          <label for="retry-image-ids">Image IDs:</label>
+          <textarea
+            id="retry-image-ids"
+            readonly
+            class="readonly-field"
+          ></textarea>
+        </div>
 
-        function formatDate(dateString) {
-            if (!dateString) return 'N/A';
-            try {
-                return new Date(dateString).toLocaleString();
-            } catch (e) {
-                return dateString;
-            }
-        }
+        <div class="form-group">
+          <label for="retry-vlm-prompt">VLM Prompt:</label>
+          <textarea
+            id="retry-vlm-prompt"
+            placeholder="How to describe the image?"
+          ></textarea>
+        </div>
 
-        function openSubmitDialog() {
-            document.getElementById('submit-dialog-overlay').style.display = 'flex';
-            clearSubmitForm();
-        }
+        <div class="form-group">
+          <label for="retry-prompt">Prompt:</label>
+          <textarea
+            id="retry-prompt"
+            placeholder="What event to detect?"
+          ></textarea>
+        </div>
 
-        function closeSubmitDialog(shouldConfirm = true) {
-            if (!shouldConfirm || confirm('Are you sure you want to close this dialog? Any unsaved changes will be lost.')) {
-                document.getElementById('submit-dialog-overlay').style.display = 'none';
-                clearSubmitForm();
-            }
-        }
+        <div class="form-group">
+          <label for="retry-webhook-url">Webhook URL:</label>
+          <input
+            type="text"
+            id="retry-webhook-url"
+            placeholder="Enter webhook URL"
+          />
+        </div>
 
-        function clearSubmitForm() {
-            document.getElementById('submit-vlm-prompt').value = '';
-            document.getElementById('submit-prompt').value = '';
-            document.getElementById('submit-image-ids').value = '';
-            document.getElementById('submit-webhook-url').value = '';
-            document.getElementById('submit-domain-id').value = '';
-            document.getElementById('submit-status-message').style.display = 'none';
-        }
+        <div id="retry-status-message" class="status-message"></div>
+      </div>
+    </div>
 
-        async function submitJob() {
-            const vlmPrompt = document.getElementById('submit-vlm-prompt').value.trim();
-            const prompt = document.getElementById('submit-prompt').value.trim();
-            const imageIds = document.getElementById('submit-image-ids').value.trim();
-            const webhookUrl = document.getElementById('submit-webhook-url').value.trim();
-            const domainId = document.getElementById('submit-domain-id').value.trim();
-            
-            if (!vlmPrompt || !imageIds || !domainId) {
-                showSubmitStatus('Please fill in all required fields', 'error');
-                return;
-            }
+    <!-- View Job Dialog -->
+    <div
+      id="view-dialog-overlay"
+      class="dialog-overlay"
+      onclick="closeViewDialog()"
+    >
+      <div class="dialog">
+        <div class="dialog-header">
+          <h3 class="dialog-title">View Job Details</h3>
+        </div>
 
-            const jobData = {
-                job_type: 'task_timing_v1',
-                input: {
-                    vlm_prompt: vlmPrompt,
-                    prompt: prompt,
-                    image_ids: imageIds.split('\n').filter(id => id.trim()),
-                    webhook_url: webhookUrl,
-                    domain_id: domainId
-                }
-            };
+        <div class="form-group">
+          <label for="view-job-id">Job ID:</label>
+          <input type="text" id="view-job-id" readonly class="readonly-field" />
+        </div>
 
-            try {
-                const response = await fetch(`${serverUrl}/jobs`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(jobData)
-                });
+        <div class="form-group">
+          <label for="view-job-type">Job Type:</label>
+          <input
+            type="text"
+            id="view-job-type"
+            readonly
+            class="readonly-field"
+          />
+        </div>
 
-                if (response.ok) {
-                    showSubmitStatus('Job submitted successfully!', 'success');
-                    setTimeout(() => {
-                        closeSubmitDialog(false);
-                        loadJobs();
-                    }, 1000);
-                } else {
-                    const errorText = await response.text();
-                    showSubmitStatus(`Error: ${response.status} - ${errorText}`, 'error');
-                }
-            } catch (error) {
-                showSubmitStatus(`Network error: ${error.message}`, 'error');
-            }
-        }
+        <div class="form-group">
+          <label for="view-job-status">Status:</label>
+          <input
+            type="text"
+            id="view-job-status"
+            readonly
+            class="readonly-field"
+          />
+        </div>
 
-        function showSubmitStatus(message, type) {
-            const statusElement = document.getElementById('submit-status-message');
-            statusElement.textContent = message;
-            statusElement.className = `status-message ${type}`;
-            statusElement.style.display = 'block';
-        }
+        <div class="form-group">
+          <label for="view-domain-id">Domain ID:</label>
+          <input
+            type="text"
+            id="view-domain-id"
+            readonly
+            class="readonly-field"
+          />
+        </div>
 
-        async function openRetryDialog(jobId) {
-            currentRetryJobId = jobId;
-            try {
-                const response = await fetch(`http://localhost:8080/jobs/${jobId}`);
-                if (response.ok) {
-                    const job = await response.json();
-                    populateRetryForm(job);
-                    document.getElementById('retry-dialog-overlay').style.display = 'flex';
-                } else {
-                    showStatus(`Error loading job: ${response.status}`, 'error');
-                }
-            } catch (error) {
-                showStatus(`Network error: ${error.message}`, 'error');
-            }
-        }
+        <div class="form-group">
+          <label for="view-image-ids">Image IDs:</label>
+          <textarea
+            id="view-image-ids"
+            readonly
+            class="readonly-field"
+          ></textarea>
+        </div>
 
-        function populateRetryForm(job) {
-            document.getElementById('retry-job-id').value = job.id || '';
-            document.getElementById('retry-job-status').value = job.status || '';
-            document.getElementById('retry-domain-id').value = job.input?.domain_id || '';
-            document.getElementById('retry-image-ids').value = job.input?.image_ids?.join('\n') || '';
-            document.getElementById('retry-vlm-prompt').value = job.input?.vlm_prompt || '';
-            document.getElementById('retry-prompt').value = job.input?.prompt || '';
-            document.getElementById('retry-webhook-url').value = job.input?.webhook_url || '';
-            document.getElementById('retry-status-message').style.display = 'none';
-        }
+        <div class="form-group">
+          <label for="view-vlm-prompt">VLM Prompt:</label>
+          <textarea
+            id="view-vlm-prompt"
+            readonly
+            class="readonly-field"
+          ></textarea>
+        </div>
 
-        function closeRetryDialog(shouldConfirm = true) {
-            if (!shouldConfirm || confirm('Are you sure you want to close this dialog? Any unsaved changes will be lost.')) {
-                document.getElementById('retry-dialog-overlay').style.display = 'none';
-                currentRetryJobId = null;
-            }
-        }
+        <div class="form-group">
+          <label for="view-prompt">Prompt:</label>
+          <textarea id="view-prompt" readonly class="readonly-field"></textarea>
+        </div>
 
-        async function retryJob() {
-            if (!currentRetryJobId) return;
+        <div class="form-group">
+          <label for="view-webhook-url">Webhook URL:</label>
+          <input
+            type="text"
+            id="view-webhook-url"
+            readonly
+            class="readonly-field"
+          />
+        </div>
 
-            const vlmPrompt = document.getElementById('retry-vlm-prompt').value.trim();
-            const prompt = document.getElementById('retry-prompt').value.trim();
-            const webhookUrl = document.getElementById('retry-webhook-url').value.trim();
-            
-            if (!vlmPrompt) {
-                showRetryStatus('Please fill in all required fields', 'error');
-                return;
-            }
+        <div class="form-group">
+          <label for="view-created-at">Created At:</label>
+          <input
+            type="text"
+            id="view-created-at"
+            readonly
+            class="readonly-field"
+          />
+        </div>
 
-            const jobData = {
-                job_type: 'task_timing_v1',
-                input: {
-                    vlm_prompt: vlmPrompt,
-                    prompt: prompt,
-                    webhook_url: webhookUrl,
-                    domain_id: document.getElementById('retry-domain-id').value,
-                    image_ids: document.getElementById('retry-image-ids').value.split('\n').filter(id => id.trim())
-                }
-            };
+        <div class="form-group">
+          <label for="view-updated-at">Updated At:</label>
+          <input
+            type="text"
+            id="view-updated-at"
+            readonly
+            class="readonly-field"
+          />
+        </div>
 
-            try {
-                const response = await fetch(`${serverUrl}/jobs/${currentRetryJobId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(jobData)
-                });
+        <div class="form-group">
+          <label for="view-error">Error:</label>
+          <div id="view-error" class="json-display"></div>
+        </div>
 
-                if (response.ok) {
-                    showRetryStatus('Job updated successfully!', 'success');
-                    setTimeout(() => {
-                        closeRetryDialog(false);
-                        loadJobs();
-                    }, 1000);
-                } else {
-                    const errorText = await response.text();
-                    showRetryStatus(`Error: ${response.status} - ${errorText}`, 'error');
-                }
-            } catch (error) {
-                showRetryStatus(`Network error: ${error.message}`, 'error');
-            }
-        }
+        <div class="form-group">
+          <label for="view-output">Output:</label>
+          <div id="view-output" class="json-display"></div>
+        </div>
+      </div>
+    </div>
 
-        function showRetryStatus(message, type) {
-            const statusElement = document.getElementById('retry-status-message');
-            statusElement.textContent = message;
-            statusElement.className = `status-message ${type}`;
-            statusElement.style.display = 'block';
-        }
-
-                 function showStatus(message, type) {
-             const statusElement = document.getElementById('status-message');
-             statusElement.textContent = message;
-             statusElement.className = `status-message ${type}`;
-             statusElement.style.display = 'block';
-             
-             setTimeout(() => {
-                 statusElement.style.display = 'none';
-             }, 5000);
-         }
-         
-         async function openViewDialog(jobId) {
-                         try {
-                const response = await fetch(`${serverUrl}/jobs/${jobId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-                 if (response.ok) {
-                     const job = await response.json();
-                     populateViewForm(job);
-                     document.getElementById('view-dialog-overlay').style.display = 'flex';
-                 } else {
-                     showStatus(`Error loading job: ${response.status}`, 'error');
-                 }
-             } catch (error) {
-                 showStatus(`Network error: ${error.message}`, 'error');
-             }
-         }
-         
-         function populateViewForm(job) {
-             document.getElementById('view-job-id').value = job.id || '';
-             document.getElementById('view-job-type').value = job.job_type || '';
-             document.getElementById('view-job-status').value = job.status || '';
-             document.getElementById('view-domain-id').value = job.input?.domain_id || '';
-             document.getElementById('view-image-ids').value = Array.isArray(job.input?.image_ids) ? job.input.image_ids.join('\n') : (job.input?.image_ids || '');
-             document.getElementById('view-vlm-prompt').value = job.input?.vlm_prompt || '';
-             document.getElementById('view-prompt').value = job.input?.prompt || '';
-             document.getElementById('view-webhook-url').value = job.input?.webhook_url || '';
-             document.getElementById('view-created-at').value = formatDate(job.created_at);
-             document.getElementById('view-updated-at').value = formatDate(job.updated_at);
-             
-             // Display error and output as pretty JSON if they exist
-             displayJsonField('view-error', job.error);
-             displayJsonField('view-output', job.output);
-         }
-         
-         function closeViewDialog() {
-             document.getElementById('view-dialog-overlay').style.display = 'none';
-         }
-         
-         function displayJsonField(fieldId, data) {
-             const field = document.getElementById(fieldId);
-             if (data !== null && data !== undefined) {
-                 try {
-                     // If data is already a string, try to parse it
-                     const jsonData = typeof data === 'string' ? JSON.parse(data) : data;
-                     field.textContent = JSON.stringify(jsonData, null, 2);
-                     field.style.display = 'block';
-                 } catch (e) {
-                     // If parsing fails, display as string
-                     field.textContent = String(data);
-                     field.style.display = 'block';
-                 }
-             } else {
-                 field.style.display = 'none';
-             }
-         }
-    </script>
-</body>
-</html> 
+    <script type="module" src="src/js/main.js"></script>
+  </body>
+</html>

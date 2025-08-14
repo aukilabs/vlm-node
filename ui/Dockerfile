@@ -1,4 +1,23 @@
-# Use nginx alpine as base image
+# Multi-stage build for Vite application
+# Stage 1: Build the Vite application
+FROM node:18-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# Stage 2: Serve with nginx
 FROM nginx:alpine
 
 # Install necessary packages
@@ -9,12 +28,8 @@ RUN apk add --no-cache \
 # Copy nginx configuration
 COPY nginx-default.conf /etc/nginx/conf.d/default.conf
 
-# Copy static files
-COPY index.html /usr/share/nginx/html/
-COPY config.js /usr/share/nginx/html/config.js
-
-RUN cat /etc/nginx/conf.d/default.conf
-RUN cat /usr/share/nginx/html/config.js
+# Copy built files from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Expose port 3000
 EXPOSE 3000
