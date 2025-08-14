@@ -15,19 +15,10 @@ export default defineConfig({
     port: 3000,
     host: true,
   },
-  optimizeDeps: {
-    exclude: ['@your-org/rust-wasm-package'], // Replace with your actual WASM package name
-  },
   plugins: [],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
     },
-  },
-  // WASM support
-  assetsInclude: ['**/*.wasm'],
-  // Enable WASM streaming
-  experimental: {
-    asyncWebAssembly: true,
   },
 });

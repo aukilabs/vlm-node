@@ -1,25 +1,22 @@
-FROM python:3.11-slim-bookworm
-
 ARG TARGETPLATFORM TARGETARCH TARGETOS
 
+FROM nvidia/cuda:13.0.0-devel-ubuntu24.04
 
-# Install dependencies: curl, libpq-dev, git, ca-certificates
+# Install Python and dependencies for NVIDIA base image
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      ca-certificates \
-      curl \
-      libpq-dev \
-      gnupg \
-      git \
-      && rm -rf /var/lib/apt/lists/*
-
-RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
-  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
-    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-    tee /etc/apt/sources.list.d/nvidia-container-toolkit.list \
-  && \
-    apt-get update && apt-get install -y nvidia-cuda-toolkit && \
-    rm -rf /var/lib/apt/lists/*
+      apt-get install -y --no-install-recommends \
+        python3.11 \
+        python3.11-dev \
+        python3.11-distutils \
+        python3-pip \
+        ca-certificates \
+        curl \
+        libpq-dev \
+        git \
+        && rm -rf /var/lib/apt/lists/* \
+        && ln -s /usr/bin/python3.11 /usr/bin/python \
+        && ln -s /usr/bin/python3.11 /usr/bin/python3 \
+        && ln -s /usr/bin/pip3 /usr/bin/pip;rm -rf /var/lib/apt/lists/*; \
 
 # Install Ollama & pull models
 RUN curl -fsSL https://ollama.com/install.sh | sh
