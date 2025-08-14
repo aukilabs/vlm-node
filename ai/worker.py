@@ -5,6 +5,29 @@ from pydantic import BaseModel
 from pathlib import Path
 import os
 import re
+import sys
+
+def ensure_model_available(model_name):
+    """
+    Ensures a model is available, pulling it if necessary.
+    Exits with code 1 if failed.
+    """
+    try:
+        # Check if model exists locally
+        models = ollama.list()
+        available_models = [model['name'] for model in models['models']]
+        
+        if model_name in available_models:
+            print(f"[Worker] Model {model_name} already available")
+            return
+        
+        print(f"[Worker] Model {model_name} not found, pulling...")
+        ollama.pull(model_name)
+        print(f"[Worker] Model {model_name} pulled successfully")
+        
+    except Exception as e:
+        print(f"[Worker] Failed to pull model {model_name}: {e}")
+        sys.exit(1)
 
 def finish_processing(conn, job_id, output):
     with conn.cursor() as cur:
@@ -82,7 +105,17 @@ class TaskTiming(BaseModel):
 def run_inference(vlm_prompt, prompt, image_paths):
     start_image = None
     end_image = None
-    model = os.environ.get("MODEL", "gemma3:4b")
+    
+    # Get model names from environment variables
+    vlm_model = os.environ.get("VLM_MODEL", "llava:7b")
+    llm_model = os.environ.get("LLM_MODEL", "llama3")
+    
+    print(f"[Worker] Using VLM model: {vlm_model}")
+    print(f"[Worker] Using LLM model: {llm_model}")
+    
+    # Ensure models are available
+    ensure_model_available(vlm_model)
+    ensure_model_available(llm_model)
 
     print(f"[Worker] Running inference for {len(image_paths)} images: {image_paths}")
     results = "id,timestamp,event\n"
@@ -90,7 +123,7 @@ def run_inference(vlm_prompt, prompt, image_paths):
     for image_path in image_paths:
         print(f"[Worker] Image path: {image_path}")
         res = ollama.chat(
-            model="llava:7b",
+            model=vlm_model,
             messages=[
                 {"role": "user", "content": vlm_prompt, "images": [image_path]}
             ],
@@ -109,7 +142,7 @@ def run_inference(vlm_prompt, prompt, image_paths):
 
     # Run the LLM for temporal reasoning
     temporal_res = ollama.chat(
-        model="llama3",
+        model=llm_model,
         messages=[
             {"role": "user", "content": temporal_prompt}
         ],

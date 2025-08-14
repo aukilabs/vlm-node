@@ -1,6 +1,5 @@
-ARG TARGETPLATFORM TARGETARCH TARGETOS
-
 FROM nvidia/cuda:13.0.0-devel-ubuntu24.04
+ARG TARGETPLATFORM TARGETARCH TARGETOS
 
 # Install Python and dependencies for NVIDIA base image
 RUN apt-get update && \
@@ -18,9 +17,9 @@ RUN apt-get update && \
         && ln -s /usr/bin/python3.11 /usr/bin/python3 \
         && ln -s /usr/bin/pip3 /usr/bin/pip;rm -rf /var/lib/apt/lists/*; \
 
-# Install Ollama & pull models
+# Install Ollama (models will be pulled dynamically in Python code)
 RUN curl -fsSL https://ollama.com/install.sh | sh
-RUN ollama serve & sleep 5 && ollama pull llava:7b && ollama pull llama3
+RUN ollama serve
 
 WORKDIR /app
 

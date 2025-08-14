@@ -14,3 +14,5 @@ data:
   API_URL: "https://api.auki.network"
   DDS_URL: "https://dds.auki.network"
   CLIENT_ID: "vlm-node"
+  VLM_MODEL: "llava:7b"
+  LLM_MODEL: "llama3"
