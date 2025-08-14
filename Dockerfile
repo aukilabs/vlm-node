@@ -18,7 +18,7 @@ RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearm
     sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
     tee /etc/apt/sources.list.d/nvidia-container-toolkit.list \
   && \
-    apt-get install -y nvidia-cuda-toolkit && \
+    apt-get update && apt-get install -y nvidia-cuda-toolkit && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Ollama & pull models
