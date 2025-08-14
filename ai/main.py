@@ -11,26 +11,9 @@ import os
 POSTGRES_URL = os.environ.get("POSTGRES_URL")
 if not POSTGRES_URL:
     raise RuntimeError("POSTGRES_URL environment variable not set")
-# Parse the POSTGRES_URL to a Python connection string for psycopg
-import urllib.parse
-
-def parse_postgres_url(url):
-    # Example: postgres://user:pass@host:port/db
-    parsed = urllib.parse.urlparse(url)
-    if parsed.scheme != "postgres":
-        raise ValueError("Only postgres:// URLs are supported")
-    user = parsed.username
-    password = parsed.password
-    host = parsed.hostname
-    port = parsed.port
-    dbname = parsed.path.lstrip("/")
-    # psycopg expects: dbname=... user=... password=... host=... port=...
-    return f"dbname={dbname} user={user} password={password} host={host} port={port}"
-
-DB_CONN_STR = parse_postgres_url(POSTGRES_URL)
 
 def get_db_conn():
-    return psycopg.connect(DB_CONN_STR)
+    return psycopg.connect(POSTGRES_URL)
 
 USE_MULTITHREAD = False  # 🔹 toggle this later
 MAX_WORKERS = 2          # 🔹 adjust when enabling multi-thread

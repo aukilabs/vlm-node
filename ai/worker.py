@@ -1,11 +1,10 @@
 # worker.py
 import json
 import ollama
-from pydantic import BaseModel
-from pathlib import Path
 import os
 import re
 import sys
+import requests
 
 def ensure_model_available(model_name):
     """
@@ -15,7 +14,8 @@ def ensure_model_available(model_name):
     try:
         # Check if model exists locally
         models = ollama.list()
-        available_models = [model['name'] for model in models['models']]
+        print(f"[Worker] Models: {models}")
+        available_models = [model['model'] for model in models['models']]
         
         if model_name in available_models:
             print(f"[Worker] Model {model_name} already available")
@@ -98,10 +98,6 @@ def parse_image_timestamp(image_path):
         return match.group('ts')
     return ""
 
-class TaskTiming(BaseModel):
-    start_image: str
-    end_image: str
-
 def run_inference(vlm_prompt, prompt, image_paths):
     start_image = None
     end_image = None
@@ -158,8 +154,6 @@ def send_webhook(webhook_url, job_id, data, error):
     if webhook_url is None or webhook_url == "":
         print(f"[Worker] Webhook URL is empty")
         return
-
-    import requests
 
     payload = {
         "job_id": job_id,
