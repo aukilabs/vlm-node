@@ -2,23 +2,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "compute-node.uiDeploymentName" . }}
+  name: {{ include "vlm-node.uiDeploymentName" . }}
   labels:
-    {{- include "compute-node.nodeLabels" . | nindent 4 }}
+    {{- include "vlm-node.nodeLabels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.ui.replicas | default 1 }}
   selector:
     matchLabels:
-      {{- include "compute-node.nodeSelectorLabels" . | nindent 6 }}
+      {{- include "vlm-node.nodeSelectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: ui
   template:
     metadata:
       labels:
-        {{- include "compute-node.nodeSelectorLabels" . | nindent 8 }}
+        {{- include "vlm-node.nodeSelectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: ui
     spec:
       {{- if .Values.serviceAccount.create }}
-      serviceAccountName: {{ include "compute-node.serviceAccountName" . }}
+      serviceAccountName: {{ include "vlm-node.serviceAccountName" . }}
       {{- end }}
       containers:
       - name: ui

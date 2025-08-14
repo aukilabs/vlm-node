@@ -1,4 +1,4 @@
-# Default values for compute-node
+# Default values for vlm-node
 # This is a YAML-formatted file.
 
 # Service Account configuration
@@ -56,9 +56,9 @@ postgresql:
     # defaultStorageClass: ""
     postgresql:
       auth:
-        username: compute-node
-        password: compute-node
-        database: compute-node
+        username: vlm-node
+        password: vlm-node
+        database: vlm-node
   primary:
     networkPolicy:
       enabled: false
@@ -71,7 +71,7 @@ postgresql:
         cpu: 100m
         memory: 128Mi
         ephemeral-storage: 50Mi
-  fullnameOverride: "compute-node-postgresql"
+  fullnameOverride: "vlm-node-postgresql"
 
 # Storage configuration
 storage:
@@ -91,10 +91,10 @@ ingress:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
   hosts:
-    - compute-node
+    - vlm-node
   tls:
     - hosts:
-        - compute-node
+        - vlm-node
 
 # Service configuration
 service:

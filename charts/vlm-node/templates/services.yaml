@@ -3,9 +3,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "compute-node.serverServiceName" . }}
+  name: {{ include "vlm-node.serverServiceName" . }}
   labels:
-    {{- include "compute-node.nodeLabels" . | nindent 4 }}
+    {{- include "vlm-node.nodeLabels" . | nindent 4 }}
     app.kubernetes.io/component: server
 spec:
   type: {{ .Values.service.type }}
@@ -19,7 +19,7 @@ spec:
     targetPort: admin
     protocol: TCP
   selector:
-    {{- include "compute-node.nodeSelectorLabels" . | nindent 4 }}
+    {{- include "vlm-node.nodeSelectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: server
 {{- end }}
 
@@ -28,9 +28,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "compute-node.uiServiceName" . }}
+  name: {{ include "vlm-node.uiServiceName" . }}
   labels:
-    {{- include "compute-node.nodeLabels" . | nindent 4 }}
+    {{- include "vlm-node.nodeLabels" . | nindent 4 }}
     app.kubernetes.io/component: ui
 spec:
   type: {{ .Values.service.type }}
@@ -40,6 +40,6 @@ spec:
     targetPort: {{ .Values.ui.port | default 3000 }}
     protocol: TCP
   selector:
-    {{- include "compute-node.nodeSelectorLabels" . | nindent 4 }}
+    {{- include "vlm-node.nodeSelectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: ui
 {{- end }}

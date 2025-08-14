@@ -4,22 +4,18 @@ ARG TARGETPLATFORM TARGETARCH TARGETOS
 # Install Python and dependencies for NVIDIA base image
 RUN apt-get update && \
       apt-get install -y --no-install-recommends \
-        python3.11 \
-        python3.11-dev \
-        python3.11-distutils \
         python3-pip \
         ca-certificates \
-        curl \
         libpq-dev \
         git \
+        tini \
         && rm -rf /var/lib/apt/lists/* \
-        && ln -s /usr/bin/python3.11 /usr/bin/python \
-        && ln -s /usr/bin/python3.11 /usr/bin/python3 \
+        && ln -s /usr/bin/python3.12 /usr/bin/python \
+        && ln -s /usr/bin/python3.12 /usr/bin/python3 \
         && ln -s /usr/bin/pip3 /usr/bin/pip;rm -rf /var/lib/apt/lists/*; \
 
 # Install Ollama (models will be pulled dynamically in Python code)
 RUN curl -fsSL https://ollama.com/install.sh | sh
-RUN ollama serve
 
 WORKDIR /app
 
@@ -35,11 +31,14 @@ COPY server/migrations /app/migrations
 ENV MIGRATIONS_PATH=/app/migrations
 
 # Create user and permissions
-RUN groupadd -g 101 compute-node && \
-    useradd -m -u 100 -g compute-node -s /bin/bash compute-node && \
-    chown -R compute-node:compute-node /app
+RUN groupadd -g 101 vlm-node && \
+    useradd -m -u 100 -g vlm-node -s /bin/bash vlm-node && \
+    chown -R vlm-node:vlm-node /app
 
-USER compute-node
+USER vlm-node
 
-# Run the Rust server as main process, and Python worker in background
-CMD ["sh", "-c", "python main.py & exec /app/server"]
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Use tini as entrypoint for proper signal handling
+ENTRYPOINT ["/usr/bin/tini", "--", "/app/docker-entrypoint.sh"]

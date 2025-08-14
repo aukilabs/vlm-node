@@ -41,11 +41,11 @@ curl "localhost:8080/jobs/{job_id}"
 ```
 
 
-# compute-node
+# vlm-node
 
-`compute-node` is a template project designed to make it easy to spin up new compute nodes that can accept and process jobs in a distributed system. The main goal is to let you focus on the AI logic—especially in the `ai/worker.py` file—while the rest of the infrastructure (job queueing, orchestration, database, etc.) is handled for you.
+`vlm-node` is a template project designed to make it easy to spin up new compute nodes that can accept and process jobs in a distributed system. The main goal is to let you focus on the AI logic—especially in the `ai/worker.py` file—while the rest of the infrastructure (job queueing, orchestration, database, etc.) is handled for you.
 
-## What does compute-node do?
+## What does vlm-node do?
 
 - **Job Management:** Accepts jobs via an API, stores them in a database, and manages their status.
 - **Worker Process:** Runs a Python worker that picks up jobs, processes them, and updates their status/results.

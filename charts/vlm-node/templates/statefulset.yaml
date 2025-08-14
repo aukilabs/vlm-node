@@ -2,24 +2,24 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "compute-node.serverStatefulSetName" . }}
+  name: {{ include "vlm-node.serverStatefulSetName" . }}
   labels:
-    {{- include "compute-node.nodeLabels" . | nindent 4 }}
+    {{- include "vlm-node.nodeLabels" . | nindent 4 }}
 spec:
-  serviceName: {{ include "compute-node.serverServiceName" . }}
+  serviceName: {{ include "vlm-node.serverServiceName" . }}
   replicas: {{ .Values.server.replicas }}
   selector:
     matchLabels:
-      {{- include "compute-node.nodeSelectorLabels" . | nindent 6 }}
+      {{- include "vlm-node.nodeSelectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: server
   template:
     metadata:
       labels:
-        {{- include "compute-node.nodeSelectorLabels" . | nindent 8 }}
+        {{- include "vlm-node.nodeSelectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: server
     spec:
       {{- if .Values.serviceAccount.create }}
-      serviceAccountName: {{ include "compute-node.serviceAccountName" . }}
+      serviceAccountName: {{ include "vlm-node.serviceAccountName" . }}
       {{- end }}
       {{- if .Values.server.tolerations }}
       tolerations:
@@ -43,9 +43,9 @@ spec:
         {{- end }}
         envFrom:
         - configMapRef:
-            name: {{ include "compute-node.configMapName" . }}
+            name: {{ include "vlm-node.configMapName" . }}
         - secretRef:
-            name: {{ include "compute-node.secretName" . }}
+            name: {{ include "vlm-node.secretName" . }}
         resources:
           {{- toYaml .Values.server.resources | nindent 10 }}
         volumeMounts:
@@ -66,5 +66,5 @@ spec:
       volumes:
       - name: data
         persistentVolumeClaim:
-          claimName: {{ include "compute-node.storageVolumeName" . }}
+          claimName: {{ include "vlm-node.storageVolumeName" . }}
 {{- end }}

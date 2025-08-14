@@ -1,6 +1,6 @@
 {{- if .Values.ingress.enabled -}}
-{{- $serverServiceName := include "compute-node.serverServiceName" . -}}
-{{- $uiServiceName := include "compute-node.uiServiceName" . -}}
+{{- $serverServiceName := include "vlm-node.serverServiceName" . -}}
+{{- $uiServiceName := include "vlm-node.uiServiceName" . -}}
 {{- $serverPort := .Values.server.ports.main -}}
 {{- $uiPort := .Values.ui.port -}}
 {{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
@@ -17,9 +17,9 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ include "compute-node.ingressName" . }}
+  name: {{ include "vlm-node.ingressName" . }}
   labels:
-    {{- include "compute-node.labels" . | nindent 4 }}
+    {{- include "vlm-node.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
