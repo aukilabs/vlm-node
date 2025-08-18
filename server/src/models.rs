@@ -53,6 +53,12 @@ pub struct CreateJobRequest {
     pub input: serde_json::Value,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct RetryJobRequest {
+    pub job_type: String,
+    pub input: serde_json::Value,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct QueryJob {
     pub status: Option<JobStatus>,
@@ -65,15 +71,4 @@ pub struct ListJobsRequest {
     pub offset: Option<i64>,
     #[serde(flatten)]
     pub query: Option<QueryJob>,
-}
-
-pub const TASK_TIMING_V1: &str = "task_timing_v1";
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct TaskTimingV1Input {
-    pub prompt: String,
-    pub vlm_prompt: String,
-    pub webhook_url: String,
-    pub image_ids: Vec<String>,
-    pub domain_id: String,
 }

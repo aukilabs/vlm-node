@@ -1526,9 +1526,9 @@ checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
 
 [[package]]
 name = "posemesh-domain-http"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aaddc35b949057235d5c1f1197c378e5688e5640269e22b5a96e092d786b054e"
+checksum = "fa722f7b83c94e0f266e263ba6d9bd87fb261677259234b5bae0342a2187fea0"
 dependencies = [
  "base64",
  "console_error_panic_hook",

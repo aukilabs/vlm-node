@@ -45,17 +45,21 @@ pub async fn init_pg(config: &Config) -> Result<PgPool, Box<dyn std::error::Erro
 pub async fn create_job(
     pool: &PgPool,
     id: &str,
+    domain_id: &str,
+    query: &serde_json::Value,
     input: &serde_json::Value,
     job_type: &str,
 ) -> Result<Job, sqlx::Error> {
     let rec = sqlx::query_as::<_, Job>(
         "
-        INSERT INTO jobs (id, input, job_type, job_status)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO jobs (id, domain_id, query, input, job_type, job_status)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *
         "
     )
     .bind(id)
+    .bind(domain_id)
+    .bind(query)
     .bind(input)
     .bind(job_type)
     .bind(JobStatus::Pending)

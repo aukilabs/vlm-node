@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use futures::channel::mpsc::{self, Sender};
+use futures::channel::mpsc;
 use posemesh_domain_http::domain_data::{CreateDomainData, DomainData, UploadDomainData};
 use posemesh_domain_http::{domain_data::DownloadQuery, DomainClient};
 use tokio::fs::read_dir;
