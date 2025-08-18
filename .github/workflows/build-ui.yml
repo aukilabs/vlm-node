@@ -15,7 +15,7 @@ jobs:
   build-and-deploy:
     uses: aukilabs/github-actions/.github/workflows/javascript-workflow.yml@feature/rust-workflow
     with:
-      work_dir: ui
+      docker_context: ui
       enable_build: true
       enable_tag_latest: ${{ github.ref == 'refs/heads/main' }}
       image_name: vlm-node-ui
