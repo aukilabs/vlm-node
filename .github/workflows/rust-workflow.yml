@@ -267,4 +267,4 @@ jobs:
         if: ${{ inputs.enable_restart }}
         with:
           command: app actions run "${{ matrix.app }}" restart
-          options: --kind Deployment --resource-name "${{ matrix.app }}" --grpc-web
+          options: --kind StatefulSet --grpc-web

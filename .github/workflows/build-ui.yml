@@ -69,4 +69,4 @@ jobs:
         uses: clowdhaus/argo-cd-action/@v2.3.0
         with:
           command: app actions run vlm-node restart
-          options: --kind Deployment --resource-name vlm-node --grpc-web
+          options: --kind Deployment --grpc-web
