@@ -23,8 +23,8 @@ jobs:
       enable_sync: ${{ github.ref == 'refs/heads/main' }}
       enable_restart: ${{ github.ref == 'refs/heads/main' }}
       argocd_host: argocd.dev.aukiverse.com
-      argocd_app: vlm-node
       docker_platforms: linux/arm64,linux/amd64
+      argocd_app: vlm-node
     secrets:
       aws_access_key: ${{ secrets.GLOBAL_COMMON_AWS_ACCESS_KEY }}
       aws_secret_access_key: ${{ secrets.GLOBAL_COMMON_AWS_SECRET_ACCESS_KEY }}

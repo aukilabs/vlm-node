@@ -7,6 +7,7 @@ on:
       - 'server/**'
       - 'ai/**'
       - 'Dockerfile'
+      - '.github/workflows/build-server-worker.yml'
 
 concurrency:
   group: build-server-${{ github.ref }}
