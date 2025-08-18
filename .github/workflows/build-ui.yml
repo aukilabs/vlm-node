@@ -25,8 +25,8 @@ jobs:
       argocd_host: argocd.dev.aukiverse.com
       argocd_app: vlm-node
       docker_platforms: linux/arm64,linux/amd64
-      secrets:
-        aws_access_key: ${{ secrets.GLOBAL_COMMON_AWS_ACCESS_KEY }}
-        aws_secret_access_key: ${{ secrets.GLOBAL_COMMON_AWS_SECRET_ACCESS_KEY }}
-        argocd_password: ${{ secrets.GLOBAL_DEV_ARGOCD_PASSWORD }}
-        aws_region: ${{ vars.GLOBAL_COMMON_AWS_REGION }}
+    secrets:
+      aws_access_key: ${{ secrets.GLOBAL_COMMON_AWS_ACCESS_KEY }}
+      aws_secret_access_key: ${{ secrets.GLOBAL_COMMON_AWS_SECRET_ACCESS_KEY }}
+      argocd_password: ${{ secrets.GLOBAL_DEV_ARGOCD_PASSWORD }}
+      aws_region: ${{ vars.GLOBAL_COMMON_AWS_REGION }}
