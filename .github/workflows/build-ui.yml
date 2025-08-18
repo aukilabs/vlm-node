@@ -12,61 +12,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.GLOBAL_COMMON_AWS_ACCESS_KEY }}
-        aws-secret-access-key: ${{ secrets.GLOBAL_COMMON_AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.GLOBAL_COMMON_AWS_REGION }}
-        
-    - name: Login to Amazon ECR
-      id: ecr-login
-      uses: aws-actions/amazon-ecr-login@v2
-      
-    - name: Build Docker metadata
-      id: docker-metadata
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ steps.ecr-login.outputs.registry }}/vlm-node-ui
-        tags: |
-          type=sha,format=long,prefix=
-          type=raw,enable={{is_not_default_branch}},value={{branch}}
-          type=raw,enable={{is_default_branch}},value=latest
-          type=raw,enable=${{ inputs.extra_tag != '' }},value=${{ inputs.extra_tag }}
-          type=ref,event=tag
-      
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: ui
-        push: true
-        tags: ${{ steps.docker-metadata.outputs.tags }}
-
-  deploy:
-    name: Deploy
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Authenticate ArgoCD
-        uses: clowdhaus/argo-cd-action/@v2.3.0
-        with:
-          command: login
-          options: --username admin --password "${{ secrets.GLOBAL_DEV_ARGOCD_PASSWORD }}" --grpc-web "argocd.dev.aukiverse.com:443"
-      - name: Sync ArgoCD app
-        uses: clowdhaus/argo-cd-action/@v2.3.0
-        with:
-          command: app sync vlm-node
-          options: --grpc-web --async
-      - name: Restart ArgoCD app
-        uses: clowdhaus/argo-cd-action/@v2.3.0
-        with:
-          command: app actions run vlm-node restart
-          options: --kind Deployment --grpc-web
+  use: aukilabs/github-actions/javascript-workflow@feature/rust-workflow
+  with:
+    work_dir: ui
+    enable_build: true
+    enable_tag_latest: true
+    enable_test: false
+    image_name: vlm-node-ui
+    enable_sync: ${{ github.ref == 'refs/heads/main' }}
+    enable_restart: ${{ github.ref == 'refs/heads/main' }}
+    argocd_host: argocd.dev.aukiverse.com
+    argocd_app: vlm-node
+    docker_platforms: linux/arm64,linux/amd64
+    secrets:
+      aws_access_key: ${{ secrets.GLOBAL_COMMON_AWS_ACCESS_KEY }}
+      aws_secret_access_key: ${{ secrets.GLOBAL_COMMON_AWS_SECRET_ACCESS_KEY }}
+      argocd_password: ${{ secrets.GLOBAL_DEV_ARGOCD_PASSWORD }}
+      aws_region: ${{ vars.GLOBAL_COMMON_AWS_REGION }}
