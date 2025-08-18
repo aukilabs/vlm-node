@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import requests
+from jobs import finish_processing, fail_job, complete_job
 
 def ensure_model_available(model_name):
     """
@@ -28,44 +29,6 @@ def ensure_model_available(model_name):
     except Exception as e:
         print(f"[Worker] Failed to pull model {model_name}: {e}")
         sys.exit(1)
-
-def finish_processing(conn, job_id, output):
-    with conn.cursor() as cur:
-        cur.execute("""
-            UPDATE jobs
-            SET job_status='completing', output=%s, updated_at=now()
-            WHERE id=%s
-        """, (json.dumps(output), job_id))
-        conn.commit()
-
-def cancel_job(conn, job_id):
-    with conn.cursor() as cur:
-        cur.execute("""
-            UPDATE jobs
-            SET job_status='cancelled', updated_at=now()
-            WHERE id=%s AND job_status!='completed' AND job_status!='failed' AND job_status!='cancelled'
-        """, (job_id,))
-        conn.commit()
-
-def fail_job(conn, job_id, error):
-    with conn.cursor() as cur:
-        cur.execute("""
-            UPDATE jobs
-            SET job_status='failed', error=%s, updated_at=now()
-            WHERE id=%s
-        """, (json.dumps(error), job_id))
-        conn.commit()
-
-def complete_job(conn, job_id):
-    with conn.cursor() as cur:
-        cur.execute("""
-            UPDATE jobs
-            SET job_status='completed', updated_at=now()
-            WHERE id=%s
-        """, (job_id,))
-        conn.commit()
-
-import re
 
 def parse_image_id(image_path):
     """

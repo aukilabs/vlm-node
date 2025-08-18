@@ -1,7 +1,8 @@
 # main.py
 import time
 import psycopg
-from worker import process_job, fail_job
+from jobs import get_next_job, fail_job, cancel_job
+from worker import process_job
 
 # Optional import for multi-threading (future use)
 from concurrent.futures import ThreadPoolExecutor
@@ -17,26 +18,6 @@ def get_db_conn():
 
 USE_MULTITHREAD = False  # 🔹 toggle this later
 MAX_WORKERS = 2          # 🔹 adjust when enabling multi-thread
-
-def get_next_job(conn):
-    with conn.cursor() as cur:
-        cur.execute("""
-            SELECT id, input FROM jobs
-            WHERE job_status = 'pending'
-            ORDER BY created_at ASC
-            LIMIT 1
-            FOR UPDATE SKIP LOCKED
-        """)
-        job = cur.fetchone()
-        if job:
-            job = {
-                "id": job[0],
-                "input": job[1]
-            }
-            cur.execute("UPDATE jobs SET job_status='running', updated_at=now() WHERE id=%s", (job['id'],))
-            conn.commit()
-            return job
-        return None
 
 def single_thread_main():
     conn = get_db_conn()

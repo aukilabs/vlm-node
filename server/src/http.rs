@@ -54,7 +54,7 @@ async fn list_jobs(
     pool: web::Data<sqlx::PgPool>,
     query: web::Query<ListJobsRequest>,
 ) -> impl Responder {
-    match crate::pg::list_jobs(&pool, query.limit, query.offset.unwrap_or(0)).await {
+    match crate::pg::list_jobs(&pool, query.limit, query.offset.unwrap_or(0), query.query.clone()).await {
         Ok(jobs) => HttpResponse::Ok().json(jobs),
         Err(e) => {
             tracing::error!("Failed to list jobs: {:?}", e);
