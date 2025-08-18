@@ -12,20 +12,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  uses: aukilabs/github-actions/.github/workflows/javascript-workflow.yml@feature/rust-workflow
-  with:
-    work_dir: ui
-    enable_build: true
-    enable_tag_latest: true
-    enable_test: false
-    image_name: vlm-node-ui
-    enable_sync: ${{ github.ref == 'refs/heads/main' }}
-    enable_restart: ${{ github.ref == 'refs/heads/main' }}
-    argocd_host: argocd.dev.aukiverse.com
-    argocd_app: vlm-node
-    docker_platforms: linux/arm64,linux/amd64
-    secrets:
-      aws_access_key: ${{ secrets.GLOBAL_COMMON_AWS_ACCESS_KEY }}
-      aws_secret_access_key: ${{ secrets.GLOBAL_COMMON_AWS_SECRET_ACCESS_KEY }}
-      argocd_password: ${{ secrets.GLOBAL_DEV_ARGOCD_PASSWORD }}
-      aws_region: ${{ vars.GLOBAL_COMMON_AWS_REGION }}
+  build-and-deploy:
+    uses: aukilabs/github-actions/.github/workflows/javascript-workflow.yml@feature/rust-workflow
+    with:
+      work_dir: ui
+      enable_build: true
+      enable_tag_latest: true
+      enable_test: false
+      image_name: vlm-node-ui
+      enable_sync: ${{ github.ref == 'refs/heads/main' }}
+      enable_restart: ${{ github.ref == 'refs/heads/main' }}
+      argocd_host: argocd.dev.aukiverse.com
+      argocd_app: vlm-node
+      docker_platforms: linux/arm64,linux/amd64
+      secrets:
+        aws_access_key: ${{ secrets.GLOBAL_COMMON_AWS_ACCESS_KEY }}
+        aws_secret_access_key: ${{ secrets.GLOBAL_COMMON_AWS_SECRET_ACCESS_KEY }}
+        argocd_password: ${{ secrets.GLOBAL_DEV_ARGOCD_PASSWORD }}
+        aws_region: ${{ vars.GLOBAL_COMMON_AWS_REGION }}
