@@ -18,7 +18,6 @@ jobs:
       work_dir: ui
       enable_build: true
       enable_tag_latest: true
-      enable_test: false
       image_name: vlm-node-ui
       enable_sync: ${{ github.ref == 'refs/heads/main' }}
       enable_restart: ${{ github.ref == 'refs/heads/main' }}

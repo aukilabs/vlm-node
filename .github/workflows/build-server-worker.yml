@@ -17,6 +17,7 @@ jobs:
   build-and-deploy:
     uses: aukilabs/github-actions/.github/workflows/rust-workflow.yml@feature/rust-workflow
     with:
+      docker_context: .
       work_dir: server
       enable_build: true
       enable_test: false
