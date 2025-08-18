@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use futures::channel::mpsc;
+use futures::channel::mpsc::{self, Sender};
 use posemesh_domain_http::domain_data::{CreateDomainData, DomainData, UploadDomainData};
 use posemesh_domain_http::{domain_data::DownloadQuery, DomainClient};
 use tokio::fs::read_dir;
@@ -47,31 +47,39 @@ pub async fn download_for_job(
     Ok(count)
 }
 
+async fn upload_files(
+    data_dir: &str,
+    mut tx: Sender<UploadDomainData>
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use futures::SinkExt;
+    let mut dir = read_dir(data_dir).await.expect("Failed to read data directory");
+    while let Ok(Some(file)) = dir.next_entry().await {
+        let file_path = file.path();
+        let file_name = file_path.file_name().ok_or("Failed to get file name")?.to_str().ok_or("Failed to convert file name to string")?;
+        let file_ext = file_path.extension().ok_or("Failed to get file extension")?.to_str().ok_or("Failed to convert file extension to string")?;
+        tx.send(UploadDomainData {
+            create: Some(CreateDomainData {
+                name: file_name.to_string(),
+                data_type: file_ext.to_string(),
+            }),
+            update: None,
+            data: fs::read(file_path).await?
+        }).await?;
+    }
+    tx.close().await?;
+    Ok(())
+}
+
 pub async fn upload_for_job(
     domain_client: &DomainClient,
     domain_id: &str,
     data_dir: &str,
 ) -> Result<Vec<DomainData>, Box<dyn std::error::Error + Send + Sync>> {
-    use futures::SinkExt;
-    let (mut tx, rx) = mpsc::channel::<UploadDomainData>(100);
+    let (tx, rx) = mpsc::channel::<UploadDomainData>(100);
 
     let data_dir = data_dir.to_string();
     spawn(async move {
-        let mut dir = read_dir(data_dir).await.expect("Failed to read data directory");
-        while let Ok(Some(file)) = dir.next_entry().await {
-            let file_path = file.path();
-            let file_name = file_path.file_name().expect("Failed to get file name").to_str().expect("Failed to convert file name to string");
-            let file_ext = file_path.extension().expect("Failed to get file extension").to_str().expect("Failed to convert file extension to string");
-            tx.send(UploadDomainData {
-                create: Some(CreateDomainData {
-                    name: file_name.to_string(),
-                    data_type: file_ext.to_string(),
-                }),
-                update: None,
-                data: fs::read(file_path).await.expect("Failed to read file")
-            }).await.expect("Failed to send file to channel");
-        }
-        tx.close();
+        upload_files(&data_dir, tx).await.expect("Failed to upload domain data");
     });
     let res = domain_client.upload_domain_data(domain_id, rx).await?;
     Ok(res)
