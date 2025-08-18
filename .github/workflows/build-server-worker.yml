@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build:
-    uses: aukilabs/github-actions/rust-workflow@feature/rust-workflow
+    uses: aukilabs/github-actions/.github/workflows/rust-workflow.yml@feature/rust-workflow
     with:
       work_dir: server
       enable_build: true
