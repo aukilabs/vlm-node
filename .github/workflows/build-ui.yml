@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  use: aukilabs/github-actions/javascript-workflow@feature/rust-workflow
+  use: aukilabs/github-actions/javascript-workflow@main
   with:
     work_dir: ui
     enable_build: true

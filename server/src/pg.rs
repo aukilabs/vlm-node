@@ -4,7 +4,7 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::migrate::Migrator;
 use sqlx::PgPool;
 
-use crate::models::{Job, JobStatus};
+use crate::models::{Job, JobStatus, QueryJob};
 
 pub struct Config {
     pub postgres_url: String,
@@ -45,17 +45,21 @@ pub async fn init_pg(config: &Config) -> Result<PgPool, Box<dyn std::error::Erro
 pub async fn create_job(
     pool: &PgPool,
     id: &str,
+    domain_id: &str,
+    query: &serde_json::Value,
     input: &serde_json::Value,
     job_type: &str,
 ) -> Result<Job, sqlx::Error> {
     let rec = sqlx::query_as::<_, Job>(
         "
-        INSERT INTO jobs (id, input, job_type, job_status)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO jobs (id, domain_id, query, input, job_type, job_status)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *
         "
     )
     .bind(id)
+    .bind(domain_id)
+    .bind(query)
     .bind(input)
     .bind(job_type)
     .bind(JobStatus::Pending)
@@ -68,19 +72,27 @@ pub async fn list_jobs(
     pool: &PgPool,
     limit: i64,
     offset: i64,
+    query: Option<QueryJob>,
 ) -> Result<Vec<Job>, sqlx::Error> {
-    let jobs = sqlx::query_as::<_, Job>(
-        r#"
-        SELECT *
-        FROM jobs
-        ORDER BY created_at DESC
-        LIMIT $1 OFFSET $2
-        "#
-    )
-    .bind(limit)
-    .bind(offset)
-    .fetch_all(pool)
-    .await?;
+    let mut query_builder = sqlx::QueryBuilder::new(
+        "SELECT * FROM jobs"
+    );
+    if let Some(query) = query {
+        if let Some(status) = query.status {
+            query_builder.push(" WHERE job_status = ");
+            query_builder.push_bind(status);
+        }
+        if let Some(job_type) = query.job_type {
+            query_builder.push(" AND job_type = ");
+            query_builder.push_bind(job_type);
+        }
+    }
+    query_builder.push(" ORDER BY created_at DESC LIMIT ");
+    query_builder.push_bind(limit);
+    query_builder.push(" OFFSET ");
+    query_builder.push_bind(offset);
+    let query = query_builder.build_query_as::<Job>();
+    let jobs = query.fetch_all(pool).await?;
     Ok(jobs)
 }
 
@@ -125,4 +137,44 @@ pub async fn retry_job(
     Ok(job)
 }
 
+pub async fn fail_job(
+    pool: &PgPool,
+    id: &str,
+    error: &str,
+    updated_at: &chrono::DateTime<chrono::Utc>,
+) -> Result<Option<Job>, sqlx::Error> {
+    let job = sqlx::query_as::<_, Job>(
+        r#"
+        UPDATE jobs
+        SET job_status = $1, error = $2, updated_at = now()
+        WHERE id = $3 AND updated_at = $4
+        RETURNING *
+        "#
+    )
+    .bind(JobStatus::Failed)
+    .bind(error)
+    .bind(id)
+    .bind(updated_at)
+    .fetch_optional(pool)
+    .await?;
+    Ok(job)
+}
 
+pub async fn complete_job(
+    pool: &PgPool,
+    id: &str,
+) -> Result<Option<Job>, sqlx::Error> {
+    let job = sqlx::query_as::<_, Job>(
+        r#"
+        UPDATE jobs
+        SET job_status = $1, updated_at = now()
+        WHERE id = $2
+        RETURNING *
+        "#
+    )
+    .bind(JobStatus::Completed)
+    .bind(id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(job)
+}

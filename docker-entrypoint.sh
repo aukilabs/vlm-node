@@ -1,9 +1,9 @@
 #!/bin/bash
-# start.sh - Startup script for vlm-node services
+# start.sh - Startup script for compute-node services
 
 set -e
 
-echo "Starting vlm-node services..."
+echo "Starting compute-node services..."
 
 # Function to handle cleanup on exit
 cleanup() {

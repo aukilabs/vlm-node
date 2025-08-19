@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Images Browser - Job Runner</title>
+    <link rel="stylesheet" href="src/css/styles.css">
+    <link rel="stylesheet" href="src/css/add.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Images Browser</h1>
+        <div class="header-controls">
+          <label class="select-all-container">
+            <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAll()">
+            <span>Select All Images</span>
+          </label>
+          <button class="submit-job-btn" onclick="submitJobWithSelected()">
+            Submit Job with Selected Images
+          </button>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <!-- Download Section -->
+        <div class="download-section">
+          <h2>Download Images</h2>
+          <div class="download-form">
+            <div class="form-group">
+              <label for="domain-id">Domain ID:</label>
+              <input type="text" id="domain-id" placeholder="Enter domain ID">
+            </div>
+            
+            <div class="form-group">
+              <label for="app-key">App Key:</label>
+              <input type="text" id="app-key" placeholder="Enter app key">
+            </div>
+            
+            <div class="form-group">
+              <label for="app-secret">App Secret:</label>
+              <input type="password" id="app-secret" placeholder="Enter app secret">
+            </div>
+            
+            <button class="download-btn" onclick="downloadImages()">
+              Download Images
+            </button>
+          </div>
+          
+          <div id="download-status" class="status-message"></div>
+        </div>
+
+        <!-- Images Section -->
+        <div class="images-section">
+          <h2>Available Images</h2>
+          <div id="images-container" class="images-container">
+            <!-- Images will be loaded here -->
+          </div>
+          
+          <div id="images-loading" class="loading-message">
+            <div class="spinner"></div>
+            <span>No images loaded. Use the download form above to fetch images.</span>
+          </div>
+          
+          <div id="no-images" class="no-images-message" style="display: none;">
+            <p>No images available. Please download images first.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit Job Dialog -->
+    <div id="submit-dialog-overlay" class="dialog-overlay" onclick="closeSubmitDialog(true)">
+      <div class="dialog">
+        <div class="dialog-header">
+          <h3 class="dialog-title">Submit New Job</h3>
+          <div class="dialog-buttons">
+            <button class="btn btn-primary" onclick="submitJob()">
+              Submit
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="submit-job-type">Job Type:</label>
+          <select id="submit-job-type" disabled>
+            <option value="task_timing_v1" selected>Task Timing V1</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="submit-vlm-prompt">VLM Prompt:</label>
+          <textarea
+            id="submit-vlm-prompt"
+            placeholder="How to describe the image?"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="submit-prompt">Prompt:</label>
+          <textarea
+            id="submit-prompt"
+            placeholder="What event to detect?"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="submit-image-ids">Image IDs:</label>
+          <textarea
+            id="submit-image-ids"
+            placeholder="Selected images will appear here"
+            readonly
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="submit-webhook-url">Webhook URL:</label>
+          <input
+            type="text"
+            id="submit-webhook-url"
+            placeholder="Enter webhook URL"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="submit-domain-id">Domain ID:</label>
+          <input
+            type="text"
+            id="submit-domain-id"
+            placeholder="Enter domain ID"
+          />
+        </div>
+
+        <div id="submit-status-message" class="status-message"></div>
+      </div>
+    </div>
+
+    <script type="module" src="src/js/add.js"></script>
+  </body>
+</html>

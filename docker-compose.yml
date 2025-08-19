@@ -16,5 +16,24 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+  ui:
+    build:
+      context: ui
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+  server-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_URL=postgres://compute_node_user:compute_node_password@postgres:5432/compute_node_db
+    env_file:
+      - .env
+      - .env.local
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
 volumes:
   postgres_data:

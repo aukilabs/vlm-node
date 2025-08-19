@@ -416,6 +416,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "console_error_panic_hook"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
+dependencies = [
+ "cfg-if",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "const-oid"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1516,11 +1526,12 @@ checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
 
 [[package]]
 name = "posemesh-domain-http"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9c8f5264b7b2722f1fa662447e3883e5c93b2c52b1b2c7b17fe81ba06f30302"
+checksum = "fa722f7b83c94e0f266e263ba6d9bd87fb261677259234b5bae0342a2187fea0"
 dependencies = [
  "base64",
+ "console_error_panic_hook",
  "futures",
  "reqwest",
  "serde",

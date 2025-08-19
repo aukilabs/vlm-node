@@ -2,6 +2,8 @@ use actix_cors::Cors;
 use actix_web::{http::header::{AUTHORIZATION, CONTENT_TYPE}, web, App, HttpServer};
 use posemesh_domain_http::{config::Config, DomainClient};
 
+use crate::{domain::upload_for_job, models::{JobStatus, QueryJob}};
+
 mod pg;
 mod http;
 mod models;
@@ -39,8 +41,44 @@ async fn main() {
     
     let pool = pg::init_pg(&pg::Config::from_env().unwrap()).await.expect("Failed to initialize database");
     let domain_config = Config::from_env().expect("Failed to initialize domain config");
-    let domain_client = DomainClient::new_with_app_credential(&domain_config.api_url, &domain_config.dds_url, &domain_config.client_id, &domain_config.app_key, &domain_config.app_secret).await.expect("Failed to initialize domain client");
+    let domain_client = DomainClient::new_with_user_credential(&domain_config.api_url, &domain_config.dds_url, &domain_config.client_id, &domain_config.email.as_ref().unwrap(), &domain_config.password.as_ref().unwrap()).await.expect("Failed to initialize domain client");
     let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "../data".to_string());
+
+    let domain_client_clone = domain_client.clone();
+    let data_dir_clone = data_dir.clone();
+    let pool_clone = pool.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(10));
+        loop {
+            interval.tick().await;
+            let jobs = pg::list_jobs(&pool_clone, 1, 0, Some(QueryJob {
+                status: Some(JobStatus::Uploading),
+                job_type: None,
+            })).await;
+            if let Ok(jobs) = jobs {
+                if jobs.is_empty() {
+                    continue;
+                }
+                let job = &jobs[0];
+                let job_id = &job.common.id;
+                let data_dir = format!("{}/output/{}", &data_dir_clone, job_id);
+                if !std::path::Path::new(&data_dir).exists() {
+                    continue;
+                }
+                let res = upload_for_job(&domain_client_clone, &job.common.domain_id, &data_dir).await;
+                if let Err(e) = res {
+                    if let Err(e) = pg::fail_job(&pool_clone, job_id, &e.to_string(), &job.common.updated_at).await {
+                        tracing::error!("Failed to fail job: {:?}", e);
+                    }
+                }
+                if let Err(e) = pg::complete_job(&pool_clone, job_id).await {
+                    tracing::error!("Failed to complete job: {:?}", e);
+                }
+            } else {
+                tracing::error!("Failed to list jobs: {:?}", jobs.err());
+            }
+        }
+    });
     
     let server = HttpServer::new(move || {
         let cors = Cors::default()

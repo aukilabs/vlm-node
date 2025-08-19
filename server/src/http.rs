@@ -2,7 +2,7 @@ use actix_web::{web, HttpResponse, Responder};
 use posemesh_domain_http::{domain_data::DownloadQuery, DomainClient};
 use uuid::Uuid;
 
-use crate::models::{CreateJobRequest, ListJobsRequest, TaskTimingV1Input, TASK_TIMING_V1};
+use crate::models::{CreateJobRequest, ListJobsRequest, RetryJobRequest};
 
 async fn create_job(
     pool: web::Data<sqlx::PgPool>,
@@ -11,37 +11,27 @@ async fn create_job(
     job: web::Json<CreateJobRequest>,
 ) -> impl Responder {
     let id = Uuid::new_v4().to_string();
-    let job_type = job.job_type.as_str();
-    match job_type {
-        TASK_TIMING_V1 => {
-            let res = serde_json::from_value::<TaskTimingV1Input>(job.input.clone());
-            if let Err(e) = res {
-                tracing::error!("Failed to parse input: {:?}", e);
-                return HttpResponse::BadRequest().body("Failed to parse input");
-            }
-            let input = res.unwrap();
-            if input.image_ids.is_empty() {
-                return HttpResponse::BadRequest().body("No image ids provided");
-            }
-            let count = crate::domain::download_for_job(&domain_client, &id, &input.domain_id, &data_dir, &DownloadQuery {
-                ids: input.image_ids,
-                name: None,
-                data_type: None,
-            }).await;
-            if let Err(e) = count {
-                tracing::error!("Failed to download domain data: {:?}", e);
-                return HttpResponse::InternalServerError().body("Failed to download domain data");
-            }
-            if count.unwrap() == 0 {
-                return HttpResponse::BadRequest().body("No images found");
-            }
+    let res = serde_json::from_value::<DownloadQuery>(job.query.clone());
+    if let Err(e) = res {
+        tracing::error!("Failed to parse query: {:?}", e);
+        return HttpResponse::BadRequest().body("Failed to parse query");
+    }
+    let query = res.unwrap();
+    let count = crate::domain::download_for_job(&domain_client, &id, &job.domain_id, &data_dir, &query).await;
+    if let Err(e) = count {
+        tracing::error!("Failed to download domain data: {:?}", e);
+        // Attempt to delete the input folder for this job
+        let input_dir = format!("{}/input/{}", &*data_dir, &id);
+        if let Err(e) = tokio::fs::remove_dir_all(&input_dir).await {
+            tracing::warn!("Failed to delete input folder {}: {:?}", input_dir, e);
         }
-        _ => {
-            return HttpResponse::BadRequest().body("Invalid job type");
-        }
+        return HttpResponse::InternalServerError().body("Failed to download domain data");
+    }
+    if count.unwrap() == 0 {
+        return HttpResponse::BadRequest().body("No data found");
     }
 
-    let res = crate::pg::create_job(&pool, &id, &job.input, &job.job_type).await;
+    let res = crate::pg::create_job(&pool, &id, &job.domain_id, &job.query, &job.input, &job.job_type).await;
     if let Err(e) = res {
         tracing::error!("Failed to create job: {:?}", e);
         return HttpResponse::InternalServerError().body("Failed to create job");
@@ -54,7 +44,7 @@ async fn list_jobs(
     pool: web::Data<sqlx::PgPool>,
     query: web::Query<ListJobsRequest>,
 ) -> impl Responder {
-    match crate::pg::list_jobs(&pool, query.limit, query.offset.unwrap_or(0)).await {
+    match crate::pg::list_jobs(&pool, query.limit, query.offset.unwrap_or(0), query.query.clone()).await {
         Ok(jobs) => HttpResponse::Ok().json(jobs),
         Err(e) => {
             tracing::error!("Failed to list jobs: {:?}", e);
@@ -81,7 +71,7 @@ async fn get_job(
 async fn retry_job(
     pool: web::Data<sqlx::PgPool>,
     path: web::Path<String>,
-    body: web::Json<CreateJobRequest>,
+    body: web::Json<RetryJobRequest>,
 ) -> impl Responder {
     let job_id = path.into_inner();
     // Fetch the job to check its status
@@ -97,27 +87,12 @@ async fn retry_job(
         return HttpResponse::BadRequest().body("Job type mismatch");
     }
 
-    let input = body.input.clone();
-    let _ = match body.job_type.as_str() {
-        TASK_TIMING_V1 => {
-            let res = serde_json::from_value::<TaskTimingV1Input>(input.clone());
-            if let Err(e) = res {
-                tracing::error!("Failed to parse input: {:?}", e);
-                return HttpResponse::BadRequest().body("Failed to parse input");
-            }
-            res.unwrap()
-        }
-        _ => {
-            return HttpResponse::BadRequest().body("Invalid job type");
-        }
-    };
-
     // Only allow retry if job is Failed or Cancelled
     use crate::models::JobStatus;
     match job.common.status {
         JobStatus::Failed | JobStatus::Cancelled | JobStatus::Completed => {
             // Set job status to Pending, clear error and output
-            let res = crate::pg::retry_job(&pool, &job_id, &JobStatus::Pending, &input, &job.common.updated_at).await;
+            let res = crate::pg::retry_job(&pool, &job_id, &JobStatus::Pending, &body.input, &job.common.updated_at).await;
             match res {
                 Ok(_) => (),
                 Err(e) => {
