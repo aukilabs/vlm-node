@@ -21,11 +21,11 @@ jobs:
       docker_context: .
       enable_build: true
       enable_test: false
-      image_name: vlm-node-server
+      image_name: compute-node-server
       enable_sync: ${{ github.ref == 'refs/heads/main' }}
       enable_restart: ${{ github.ref == 'refs/heads/main' }}
       argocd_host: argocd.dev.aukiverse.com
-      argocd_app: vlm-node
+      argocd_app: compute-node
       aws_region: ${{ vars.GLOBAL_COMMON_AWS_REGION }}
     secrets:
       aws_access_key: ${{ secrets.GLOBAL_COMMON_AWS_ACCESS_KEY }}
