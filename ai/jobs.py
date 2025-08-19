@@ -59,11 +59,19 @@ def complete_job(conn, job_id):
         conn.commit()
 
 # Upload job output to domain server
-def upload_job_result(conn, job_id, output):
-    with conn.cursor() as cur:
-        cur.execute("""
-            UPDATE jobs
-            SET job_status='uploading', updated_at=now(), output=%s
-            WHERE id=%s
-        """, (json.dumps(output), job_id))
-        conn.commit()
+def upload_job_result(conn, job_id, output=None):
+    if output is None:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE jobs
+                SET job_status='uploading', updated_at=now()
+                WHERE id=%s
+            """, (job_id,))
+            conn.commit()
+    else:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE jobs
+                SET job_status='uploading', updated_at=now(), output=%s
+                WHERE id=%s
+            """, (json.dumps(output), job_id))

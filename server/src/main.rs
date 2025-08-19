@@ -71,6 +71,9 @@ async fn main() {
                         tracing::error!("Failed to fail job: {:?}", e);
                     }
                 }
+                if let Err(e) = pg::complete_job(&pool_clone, job_id).await {
+                    tracing::error!("Failed to complete job: {:?}", e);
+                }
             } else {
                 tracing::error!("Failed to list jobs: {:?}", jobs.err());
             }

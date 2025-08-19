@@ -159,3 +159,22 @@ pub async fn fail_job(
     .await?;
     Ok(job)
 }
+
+pub async fn complete_job(
+    pool: &PgPool,
+    id: &str,
+) -> Result<Option<Job>, sqlx::Error> {
+    let job = sqlx::query_as::<_, Job>(
+        r#"
+        UPDATE jobs
+        SET job_status = $1, updated_at = now()
+        WHERE id = $2
+        RETURNING *
+        "#
+    )
+    .bind(JobStatus::Completed)
+    .bind(id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(job)
+}
