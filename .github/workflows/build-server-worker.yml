@@ -7,24 +7,26 @@ on:
       - 'server/**'
       - 'ai/**'
       - 'Dockerfile'
+      - '.github/workflows/build-server-worker.yml'
 
 concurrency:
   group: build-server-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
-    uses: aukilabs/github-actions/rust-workflow@main
+  build-and-deploy:
+    uses: aukilabs/github-actions/.github/workflows/rust-workflow.yml@main
     with:
       work_dir: server
+      docker_context: .
       enable_build: true
       enable_test: false
       image_name: vlm-node-server
-      aws_region: ${{ vars.GLOBAL_COMMON_AWS_REGION }}
       enable_sync: ${{ github.ref == 'refs/heads/main' }}
       enable_restart: ${{ github.ref == 'refs/heads/main' }}
       argocd_host: argocd.dev.aukiverse.com
       argocd_app: vlm-node
+      aws_region: ${{ vars.GLOBAL_COMMON_AWS_REGION }}
     secrets:
       aws_access_key: ${{ secrets.GLOBAL_COMMON_AWS_ACCESS_KEY }}
       aws_secret_access_key: ${{ secrets.GLOBAL_COMMON_AWS_SECRET_ACCESS_KEY }}
