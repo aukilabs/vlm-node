@@ -32,11 +32,11 @@ COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
 # Create user and permissions
-RUN groupadd -g 101 vlm-node && \
-    useradd -m -u 100 -g vlm-node -s /bin/bash vlm-node && \
-    chown -R vlm-node:vlm-node /app
+RUN groupadd -g 101 compute-node && \
+    useradd -m -u 100 -g compute-node -s /bin/bash compute-node && \
+    chown -R compute-node:compute-node /app
 
-USER vlm-node
+USER compute-node
 
 # Use tini as entrypoint for proper signal handling
 ENTRYPOINT ["/usr/bin/tini", "--", "/app/docker-entrypoint.sh"]

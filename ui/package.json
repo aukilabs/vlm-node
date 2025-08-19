@@ -1,5 +1,5 @@
 {
-  "name": "vlm-node-ui",
+  "name": "compute-node-ui",
   "version": "1.0.0",
   "description": "UI for Compute Node job management system",
   "main": "index.html",
