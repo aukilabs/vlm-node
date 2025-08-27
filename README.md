@@ -23,7 +23,8 @@ make server
 
 2. **Submit a job** (example using `curl`):
 ```
-curl -X POST http://localhost:8080/jobs \
+
+curl -X POST http://localhost:8080/api/v1/jobs \
     -H "Content-Type: application/json" \
     -d '{"job_type":"task_timing_v1","query":{"ids": []},"domain_id":"","input":{"prompt":"","webhook_url":"","vlm_prompt":""}}'
 ```
@@ -37,6 +38,16 @@ make worker
 
 4. **Check Job Status**
 ```
-curl "localhost:8080/jobs?limit=100"
-curl "localhost:8080/jobs/{job_id}"
+curl "localhost:8080/api/v1/jobs?limit=100"
+curl "localhost:8080/api/v1/jobs/{job_id}"
+```
+
+5. **UI**
+```
+# Docker
+docker compose up ui -d
+# Or
+cd ui
+npm install
+npm run dev
 ```

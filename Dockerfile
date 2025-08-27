@@ -15,7 +15,6 @@ RUN apt-get update && \
 
 # Install Ollama (models will be pulled dynamically in Python code)
 RUN curl -fsSL https://ollama.com/install.sh | sh
-
 WORKDIR /app
 
 RUN python3 -m venv /app/venv --system-site-packages

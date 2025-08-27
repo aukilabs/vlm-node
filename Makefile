@@ -23,8 +23,8 @@ venv:
 
 install: venv
 	@echo "Activating venv and installing requirements..."
-	@$(ACTIVATE) pip install --upgrade pip
-	@$(ACTIVATE) pip install -r ai/requirements.txt
+	@$(ACTIVATE) pip install --upgrade pip && pip install -r ai/requirements.txt
+	@echo "Installed requirements"
 
 worker:
 	@if [ ! -f .env.local ]; then \

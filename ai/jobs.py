@@ -1,3 +1,5 @@
+import json
+
 def get_next_job(conn):
     with conn.cursor() as cur:
         cur.execute("""
