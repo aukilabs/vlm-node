@@ -105,8 +105,8 @@ service:
 security:
   createSecret: false
   existingSecretName: "vlm-node"
-  appKey: "changeme"
-  appSecret: "changeme"
+  posemeshEmail: "changeme"
+  posemeshPassword: "changeme"
 
 # Labels and annotations
 labels: {}

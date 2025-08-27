@@ -23,7 +23,6 @@ make server
 
 2. **Submit a job** (example using `curl`):
 ```
-
 curl -X POST http://localhost:8080/api/v1/jobs \
     -H "Content-Type: application/json" \
     -d '{"job_type":"task_timing_v1","query":{"ids": []},"domain_id":"","input":{"prompt":"","webhook_url":"","vlm_prompt":""}}'
