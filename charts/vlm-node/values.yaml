@@ -79,7 +79,7 @@ storage:
   storageClass: "gp2"  # Default to gp2, can be overridden for other clouds
   size: "100Gi"
   accessMode: ReadWriteOnce
-  mountPath: /data
+  mountPath: /app/data
 
 # Ingress configuration
 ingress:
