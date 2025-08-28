@@ -162,6 +162,7 @@ def find_images(input_dir):
     return image_paths
 
 def run(conn, job, input_dir, output_dir):
+    inputs = job['input']
     image_paths = find_images(input_dir)
 
     if len(image_paths) == 0:
