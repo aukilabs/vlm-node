@@ -1,6 +1,7 @@
 # worker.py
 import os
 from jobs import finish_processing, fail_job, complete_job
+import vlm
 
 DATA_DIR = os.environ.get("DATA_DIR", "data")
 INPUT_DIR = DATA_DIR + "/input/"

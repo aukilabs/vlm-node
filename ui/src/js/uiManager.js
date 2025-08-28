@@ -152,10 +152,10 @@ export class UIManager {
     const fields = {
       'retry-job-id': job.id || '',
       'retry-job-status': job.status || '',
-      'retry-domain-id': job.input?.domain_id || '',
-      'retry-image-ids': Array.isArray(job.input?.image_ids)
-        ? job.input.image_ids.join('\n')
-        : job.input?.image_ids || '',
+      'retry-domain-id': job.domain_id || '',
+      'retry-image-ids': Array.isArray(job.query?.ids)
+        ? job.query.ids.join('\n')
+        : job.query?.ids || '',
       'retry-vlm-prompt': job.input?.vlm_prompt || '',
       'retry-prompt': job.input?.prompt || '',
       'retry-webhook-url': job.input?.webhook_url || '',
@@ -219,10 +219,10 @@ export class UIManager {
       'view-job-id': job.id || '',
       'view-job-type': job.job_type || '',
       'view-job-status': job.status || '',
-      'view-domain-id': job.input?.domain_id || '',
-      'view-image-ids': Array.isArray(job.input?.image_ids)
-        ? job.input.image_ids.join('\n')
-        : job.input?.image_ids || '',
+      'view-domain-id': job.domain_id || '',
+      'view-image-ids': Array.isArray(job.query?.ids)
+        ? job.query.ids.join('\n')
+        : job.query?.ids || '',
       'view-vlm-prompt': job.input?.vlm_prompt || '',
       'view-prompt': job.input?.prompt || '',
       'view-webhook-url': job.input?.webhook_url || '',

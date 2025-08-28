@@ -96,12 +96,14 @@ export class JobManager {
   createJobData(vlmPrompt, prompt, imageIds, webhookUrl, domainId) {
     return {
       job_type: 'task_timing_v1',
+      query: {
+        ids: imageIds.split('\n').filter((id) => id.trim()),
+      },
+      domain_id: domainId,
       input: {
         vlm_prompt: vlmPrompt,
         prompt: prompt,
-        image_ids: imageIds.split('\n').filter((id) => id.trim()),
         webhook_url: webhookUrl,
-        domain_id: domainId,
       },
     };
   }
