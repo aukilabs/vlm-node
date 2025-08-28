@@ -3,6 +3,7 @@ import time
 import psycopg
 from jobs import get_next_job, fail_job, cancel_job
 from worker import process_job
+from logger_config import get_logger
 
 # Optional import for multi-threading (future use)
 from concurrent.futures import ThreadPoolExecutor
@@ -19,25 +20,28 @@ def get_db_conn():
 USE_MULTITHREAD = False  # 🔹 toggle this later
 MAX_WORKERS = 2          # 🔹 adjust when enabling multi-thread
 
+# Setup logger
+logger = get_logger("dispatcher")
+
 def single_thread_main():
     conn = get_db_conn()
-    print("[Dispatcher] Running in single-thread mode")
+    logger.info("Running in single-thread mode")
 
     while True:
         job = get_next_job(conn)
         if job:
-            print(f"[Dispatcher] Processing job {job['id']} sequentially...")
+            logger.info("Processing job sequentially", extra={"job_id": job['id']})
             try:
                 process_job(conn, job)  # 🔹 Sequential execution
             except Exception as e:
-                print(f"[Dispatcher] Error processing job {job['id']}: {e}")
+                logger.error("Error processing job", extra={"job_id": job['id'], "error": str(e)})
                 err = {
                     "code": 100,
                     "message": str(e)
                 }
                 fail_job(conn, job['id'], err)
             except KeyboardInterrupt:
-                print("[Dispatcher] Keyboard interrupt received, cancelling job...")
+                logger.info("Keyboard interrupt received, cancelling job", extra={"job_id": job['id']})
                 cancel_job(conn, job['id'])
                 exit(0)
         else:
@@ -45,13 +49,13 @@ def single_thread_main():
 
 # This is capped by postgres connection pool size, GPU memory, and CPU
 def multi_thread_main():
-    print("[Dispatcher] Running in multi-thread mode")
+    logger.info("Running in multi-thread mode")
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         main_conn = get_db_conn()
         while True:
             job = get_next_job(main_conn)
             if job:
-                print(f"[Dispatcher] Submitting job {job['id']} to worker...")
+                logger.info("Submitting job to worker", extra={"job_id": job['id']})
                 executor.submit(threaded_job, job)
             else:
                 time.sleep(2)

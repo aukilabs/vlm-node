@@ -5,6 +5,10 @@ import re
 import sys
 import requests
 from jobs import finish_processing, fail_job, complete_job
+from logger_config import get_logger
+
+# Setup logger
+logger = get_logger("vlm")
 
 def ensure_model_available(model_name):
     """
@@ -14,19 +18,19 @@ def ensure_model_available(model_name):
     try:
         # Check if model exists locally
         models = ollama.list()
-        print(f"[Worker] Models: {models}")
+        logger.info("Available models", extra={"models": str(models)})
         available_models = [model['model'] for model in models['models']]
         
         if model_name in available_models:
-            print(f"[Worker] Model {model_name} already available")
+            logger.info("Model already available", extra={"model_name": model_name})
             return
         
-        print(f"[Worker] Model {model_name} not found, pulling...")
+        logger.info("Model not found, pulling", extra={"model_name": model_name})
         ollama.pull(model_name)
-        print(f"[Worker] Model {model_name} pulled successfully")
+        logger.info("Model pulled successfully", extra={"model_name": model_name})
         
     except Exception as e:
-        print(f"[Worker] Failed to pull model {model_name}: {e}")
+        logger.error("Failed to pull model", extra={"model_name": model_name, "error": str(e)})
         sys.exit(1)
 
 import re
@@ -68,20 +72,20 @@ def run_inference(vlm_prompt, prompt, image_paths):
     
     # Get model names from environment variables
     vlm_model = os.environ.get("VLM_MODEL", "llava:7b")
-    llm_model = os.environ.get("LLM_MODEL", "llama3")
+    llm_model = os.environ.get("LLM_MODEL", "llama3:latest")
     
-    print(f"[Worker] Using VLM model: {vlm_model}")
-    print(f"[Worker] Using LLM model: {llm_model}")
+    logger.info("Using VLM model", extra={"vlm_model": vlm_model})
+    logger.info("Using LLM model", extra={"llm_model": llm_model})
     
     # Ensure models are available
     ensure_model_available(vlm_model)
     ensure_model_available(llm_model)
 
-    print(f"[Worker] Running inference for {len(image_paths)} images: {image_paths}")
+    logger.info("Running inference", extra={"image_count": len(image_paths), "image_paths": image_paths})
     results = "id,timestamp,event\n"
 
     for image_path in image_paths:
-        print(f"[Worker] Image path: {image_path}")
+        logger.info("Processing image", extra={"image_path": image_path})
         res = ollama.chat(
             model=vlm_model,
             messages=[
@@ -89,9 +93,9 @@ def run_inference(vlm_prompt, prompt, image_paths):
             ],
         )
         results += '"' + parse_image_id(image_path) + '",' + '"' + parse_image_timestamp(image_path) + '",' + '"' + res.message.content + '"\n'
-        print(f"[Worker] Inference output: {res}")
+        logger.info("Inference output", extra={"output": str(res)})
 
-    print(f"[Worker] Inference completed")
+    logger.info("Inference completed")
 
     # Compose a prompt for temporal reasoning
     temporal_prompt = (
@@ -107,7 +111,7 @@ def run_inference(vlm_prompt, prompt, image_paths):
             {"role": "user", "content": temporal_prompt}
         ],
     )
-    print(f"[Worker] Temporal reasoning output: {temporal_res.message.content}")
+    logger.info("Temporal reasoning output", extra={"output": temporal_res.message.content})
 
     return {
         "logs": results,
@@ -116,7 +120,7 @@ def run_inference(vlm_prompt, prompt, image_paths):
 
 def send_webhook(webhook_url, job_id, data, error):
     if webhook_url is None or webhook_url == "":
-        print(f"[Worker] Webhook URL is empty")
+        logger.warning("Webhook URL is empty")
         return
 
     payload = {
@@ -127,11 +131,10 @@ def send_webhook(webhook_url, job_id, data, error):
     try:
         response = requests.post(webhook_url, json=payload, timeout=10)
         if response.status_code != 200:
-            print(f"[Worker] Failed to send webhook: {response.status_code}")
-            print(f"[Worker] Response: {response.text}")
+            logger.error("Failed to send webhook", extra={"status_code": response.status_code, "response": response.text})
             raise Exception(f"Failed to send webhook: {response.text}")
         else:
-            print(f"[Worker] Webhook sent successfully")
+            logger.info("Webhook sent successfully")
     except Exception as e:
         raise e
 
@@ -166,7 +169,7 @@ def run(conn, job, input_dir, output_dir):
     image_paths = find_images(input_dir)
 
     if len(image_paths) == 0:
-        print(f"[Worker] No images found in {input_dir}")
+        logger.warning("No images found", extra={"input_dir": input_dir})
         err = {
             "code": 400,
             "message": "No images found"
@@ -177,7 +180,7 @@ def run(conn, job, input_dir, output_dir):
     try:
         results = run_inference(inputs['vlm_prompt'], inputs['prompt'], image_paths)
     except Exception as e:
-        print(f"[Worker] Error processing job {job['id']}: {e}")
+        logger.error("Error processing job", extra={"job_id": job['id'], "error": str(e)})
         err = {
             "code": 100,
             "message": str(e)
@@ -186,7 +189,7 @@ def run(conn, job, input_dir, output_dir):
         try:
             send_webhook(inputs['webhook_url'], job['id'], None, err)
         except Exception as e:
-            print(f"[Worker] Failed to send webhook: {e}")
+            logger.error("Failed to send webhook", extra={"job_id": job['id'], "error": str(e)})
         return
 
     finish_processing(conn, job['id'], results)
@@ -194,7 +197,7 @@ def run(conn, job, input_dir, output_dir):
     try:
         send_webhook(inputs['webhook_url'], job['id'], results, None)
     except Exception as e:
-        print(f"[Worker] Failed to send webhook: {e}")
+        logger.error("Failed to send webhook", extra={"job_id": job['id'], "error": str(e)})
         err = {
             "code": 200,
             "message": str(e)
