@@ -30,6 +30,18 @@ spec:
         {{- toYaml .Values.server.tolerations | nindent 8 }}
       {{- end }}
       containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        ports:
+          - name: http
+            containerPort: 11434
+            protocol: TCP
+        env:
+          - name: OLLAMA_MODELS
+            value: {{ .Values.storage.mountPath }}/models
+        volumeMounts:
+          - name: data
+            mountPath: {{ .Values.storage.mountPath }}
       - name: server
         image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
         imagePullPolicy: {{ .Values.server.image.pullPolicy }}

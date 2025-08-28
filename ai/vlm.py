@@ -12,25 +12,31 @@ logger = get_logger("vlm")
 
 def ensure_model_available(model_name):
     """
-    Ensures a model is available, pulling it if necessary.
+    Ensures a model is available, pulling it if necessary into DATA_DIR/models.
     Exits with code 1 if failed.
     """
     try:
-        # Check if model exists locally
+        # Determine the models directory
+        data_dir = os.environ.get("DATA_DIR", "data")
+        models_dir = os.path.join(data_dir, "models")
+        os.makedirs(models_dir, exist_ok=True)
+
+        # Check if model exists locally in DATA_DIR/models
+        # Ollama stores models in its own cache, but we want a copy in our models_dir
         models = ollama.list()
-        logger.info("Available models", extra={"models": str(models)})
+        logger.info("Available models: " + str(models))
         available_models = [model['model'] for model in models['models']]
         
         if model_name in available_models:
-            logger.info("Model already available", extra={"model_name": model_name})
+            logger.info("Model already available: " + model_name)
             return
         
-        logger.info("Model not found, pulling", extra={"model_name": model_name})
+        logger.info("Model not found, pulling: " + model_name)
         ollama.pull(model_name)
-        logger.info("Model pulled successfully", extra={"model_name": model_name})
+        logger.info("Model pulled successfully: " + model_name)
         
     except Exception as e:
-        logger.error("Failed to pull model", extra={"model_name": model_name, "error": str(e)})
+        logger.error("Failed to pull model: " + model_name, extra={"error": str(e)})
         sys.exit(1)
 
 import re
