@@ -18,10 +18,6 @@ spec:
         {{- include "vlm-node.nodeSelectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: server
     spec:
-      securityContext:
-        fsGroup: 101
-        runAsGroup: 101
-        runAsUser: 100
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "vlm-node.serviceAccountName" . }}
       {{- end }}
@@ -44,6 +40,10 @@ spec:
       - name: server
         image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
         imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+        securityContext:
+          fsGroup: 101
+          runAsGroup: 101
+          runAsUser: 100
         ports:
         - name: http
           containerPort: {{ .Values.server.ports.main }}
