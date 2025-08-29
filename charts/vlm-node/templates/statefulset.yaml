@@ -20,8 +20,6 @@ spec:
     spec:
       securityContext:
         fsGroup: 101
-        runAsGroup: 101
-        runAsUser: 100
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "vlm-node.serviceAccountName" . }}
       {{- end }}
@@ -29,10 +27,30 @@ spec:
       tolerations:
         {{- toYaml .Values.server.tolerations | nindent 8 }}
       {{- end }}
+      nodeSelector:
+        topology.kubernetes.io/zone: ap-southeast-1a
       containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        ports:
+        - name: ollama-http
+          containerPort: 11434
+          protocol: TCP
+        securityContext:
+          fsGroup: 0
+          runAsGroup: 0
+          runAsUser: 0
+          allowPrivilegeEscalation: false
+        volumeMounts:
+          - name: data
+            mountPath: /root/.ollama/models
       - name: server
         image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
         imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+        securityContext:
+          fsGroup: 101
+          runAsGroup: 101
+          runAsUser: 100
         ports:
         - name: http
           containerPort: {{ .Values.server.ports.main }}

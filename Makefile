@@ -32,6 +32,7 @@ worker:
 		exit 1; \
 	fi
 	@make install
+	@docker compose up ollama -d
 	@echo "Loading environment variables from .env.local..."
 	@set -a; . .env; . .env.local; set +a && . $(VENV)/bin/activate && $(PYTHON) ai/main.py
 
