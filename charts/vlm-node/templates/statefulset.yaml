@@ -29,6 +29,8 @@ spec:
       tolerations:
         {{- toYaml .Values.server.tolerations | nindent 8 }}
       {{- end }}
+      nodeSelector:
+        topology.kubernetes.io/zone: ap-southeast-1a
       containers:
       - name: ollama
         image: ollama/ollama:latest
