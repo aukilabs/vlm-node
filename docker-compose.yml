@@ -78,8 +78,6 @@ services:
     image: ollama/ollama:latest
     ports:
       - "11434:11434"
-    environment:
-      - OLLAMA_MODELS=/root/models
     volumes:
       - ./data/models:/root/.ollama/models
 volumes:
