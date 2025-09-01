@@ -76,6 +76,12 @@ services:
       - ./data:/app/data
   ollama:
     image: ollama/ollama:latest
+    environment:
+      HTTP_PROXY: ""
+      HTTPS_PROXY: ""
+      http_proxy: ""
+      https_proxy: ""
+      NO_PROXY: "localhost,127.0.0.1,.local"
     ports:
       - "11434:11434"
     volumes:

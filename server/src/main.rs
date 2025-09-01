@@ -1,5 +1,5 @@
 use actix_cors::Cors;
-use actix_web::{http::header::{AUTHORIZATION, CONTENT_TYPE}, web, App, HttpServer};
+use actix_web::{http::header::{AUTHORIZATION, CONTENT_TYPE}, web::{self, PayloadConfig}, App, HttpServer};
 use posemesh_domain_http::{config::Config, DomainClient};
 
 use crate::{domain::upload_for_job, models::{JobStatus, QueryJob}};
@@ -8,6 +8,7 @@ mod pg;
 mod http;
 mod models;
 mod domain;
+mod stream;
 
 pub fn init_tracing() -> tracing::span::Span {
     let machine_id = match machine_uid::get() {
@@ -91,6 +92,7 @@ async fn main() {
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(domain_client.clone()))
             .app_data(web::Data::new(data_dir.clone()))
+            .app_data(PayloadConfig::new(2_usize.pow(20)))
             .wrap(cors)
             .configure(http::app_config)
     })
