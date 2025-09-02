@@ -41,7 +41,7 @@ async fn main() {
     
     let pool = pg::init_pg(&pg::Config::from_env().unwrap()).await.expect("Failed to initialize database");
     let domain_config = Config::from_env().expect("Failed to initialize domain config");
-    let domain_client = DomainClient::new_with_user_credential(&domain_config.api_url, &domain_config.dds_url, &domain_config.client_id, &domain_config.email.as_ref().unwrap(), &domain_config.password.as_ref().unwrap()).await.expect("Failed to initialize domain client");
+    let domain_client = DomainClient::new_with_user_credential(&domain_config.api_url, &domain_config.dds_url, &domain_config.client_id, &domain_config.email.as_ref().unwrap(), &domain_config.password.as_ref().unwrap(), false).await.expect("Failed to initialize domain client");
     let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "../data".to_string());
 
     let domain_client_clone = domain_client.clone();

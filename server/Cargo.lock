@@ -808,6 +808,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f"
 
 [[package]]
+name = "gloo-timers"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbb143cf96099802033e0d4f4963b19fd2e0b728bcf076cd9cf7f6634f092994"
+dependencies = [
+ "futures-channel",
+ "futures-core",
+ "js-sys",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "h2"
 version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1526,13 +1538,14 @@ checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
 
 [[package]]
 name = "posemesh-domain-http"
-version = "0.1.7"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05274b63723e74ac77577b25d043e30e9de9cf756b4024bf054727959311f69b"
+checksum = "9c8b679dd7ae285f258a053e657f2f5796341845bcd4810ccb4dc0112aa24de4"
 dependencies = [
  "base64",
  "console_error_panic_hook",
  "futures",
+ "posemesh-utils",
  "reqwest",
  "serde",
  "serde-wasm-bindgen",
@@ -1540,6 +1553,20 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-wasm",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+]
+
+[[package]]
+name = "posemesh-utils"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88eb6afaf35fbe802154535039a4096214d6118f313d5fb6dc19d85a2540c66c"
+dependencies = [
+ "futures",
+ "gloo-timers",
+ "tokio",
+ "tracing",
  "wasm-bindgen",
  "wasm-bindgen-futures",
 ]
