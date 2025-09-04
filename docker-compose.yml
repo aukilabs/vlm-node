@@ -60,6 +60,7 @@ services:
     environment:
       - POSTGRES_URL=postgres://compute_node_user:compute_node_password@postgres:5432/compute_node_db
       - DATA_DIR=/app/data
+      - OLLAMA_HOST=http://ollama:11434
     env_file:
       - .env
       - .env.local

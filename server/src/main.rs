@@ -2,13 +2,15 @@ use actix_cors::Cors;
 use actix_web::{http::header::{AUTHORIZATION, CONTENT_TYPE}, web::{self, PayloadConfig}, App, HttpServer};
 use posemesh_domain_http::{config::Config, DomainClient};
 
-use crate::{domain::upload_for_job, models::{JobStatus, QueryJob}};
+use crate::{domain::upload_for_job, models::{JobStatus, QueryJob}, ollama_client::pull_ollama_model};
 
 mod pg;
 mod http;
 mod models;
 mod domain;
 mod stream;
+mod config;
+mod ollama_client;
 
 pub fn init_tracing() -> tracing::span::Span {
     let machine_id = match machine_uid::get() {
@@ -39,8 +41,12 @@ pub fn init_tracing() -> tracing::span::Span {
 async fn main() {
     let span = init_tracing();
     let _guard = span.enter();
-    
-    let pool = pg::init_pg(&pg::Config::from_env().unwrap()).await.expect("Failed to initialize database");
+
+    let pool = pg::init_pg(&pg::Config::from_env().expect("Failed to initialize pg config")).await.expect("Failed to initialize database");
+    let vlm_config = config::Config::from_env().expect("Failed to initialize vlm config");
+
+    pull_ollama_model(&vlm_config.model, &vlm_config.ollama_host).await.expect("Failed to pull ollama model");
+
     let domain_config = Config::from_env().expect("Failed to initialize domain config");
     let domain_client = DomainClient::new_with_user_credential(&domain_config.api_url, &domain_config.dds_url, &domain_config.client_id, &domain_config.email.as_ref().unwrap(), &domain_config.password.as_ref().unwrap(), false).await.expect("Failed to initialize domain client");
     let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "../data".to_string());
@@ -92,6 +98,7 @@ async fn main() {
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(domain_client.clone()))
             .app_data(web::Data::new(data_dir.clone()))
+            .app_data(web::Data::new(vlm_config.clone()))
             .app_data(PayloadConfig::new(2_usize.pow(20)))
             .wrap(cors)
             .configure(http::app_config)
