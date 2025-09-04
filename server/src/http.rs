@@ -2,7 +2,7 @@ use actix_web::{web, HttpResponse, Responder};
 use posemesh_domain_http::{domain_data::DownloadQuery, DomainClient};
 use uuid::Uuid;
 
-use crate::models::{CreateJobRequest, ListJobsRequest, RetryJobRequest};
+use crate::{models::{CreateJobRequest, ListJobsRequest, RetryJobRequest}, stream::ws_index};
 
 async fn create_job(
     pool: web::Data<sqlx::PgPool>,
@@ -129,5 +129,10 @@ pub fn app_config(cfg: &mut web::ServiceConfig) {
                 .wrap(Logger::default())
                 .route(web::get().to(get_job))
                 .route(web::put().to(retry_job))
+        )
+        .service(
+            web::resource("/api/v1/ws")
+                .wrap(Logger::default())
+                .route(web::get().to(ws_index))
         );
 }

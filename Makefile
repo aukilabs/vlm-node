@@ -32,7 +32,7 @@ worker:
 		exit 1; \
 	fi
 	@make install
-	@docker compose up ollama -d
+	@docker compose up postgres ollama -d
 	@echo "Loading environment variables from .env.local..."
 	@set -a; . .env; . .env.local; set +a && . $(VENV)/bin/activate && $(PYTHON) ai/main.py
 
@@ -46,7 +46,7 @@ server:
 		echo "Error: .env.local file is required but not found"; \
 		exit 1; \
 	fi
-	@docker compose up postgres -d
+	@docker compose up postgres ollama -d
 	@sleep 10
 	@echo "Loading environment variables from .env.local..."
 	@set -a; . .env; . .env.local; set +a && cd server && cargo run

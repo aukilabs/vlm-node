@@ -60,6 +60,7 @@ services:
     environment:
       - POSTGRES_URL=postgres://compute_node_user:compute_node_password@postgres:5432/compute_node_db
       - DATA_DIR=/app/data
+      - OLLAMA_HOST=http://ollama:11434
     env_file:
       - .env
       - .env.local
@@ -76,6 +77,12 @@ services:
       - ./data:/app/data
   ollama:
     image: ollama/ollama:latest
+    environment:
+      HTTP_PROXY: ""
+      HTTPS_PROXY: ""
+      http_proxy: ""
+      https_proxy: ""
+      NO_PROXY: "localhost,127.0.0.1,.local"
     ports:
       - "11434:11434"
     volumes:
