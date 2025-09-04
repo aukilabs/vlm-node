@@ -21,7 +21,7 @@ server:
       cpu: "500m"
     limits:
       memory: "16Gi"
-      cpu: "2000m"
+      cpu: "2"
   ports:
     main: 8080
     admin: 18190
