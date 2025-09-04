@@ -17,3 +17,4 @@ data:
   VLM_MODEL: "llava:7b"
   LLM_MODEL: "llama3"
   OLLAMA_HOST: "http://localhost:11434"
+  IMAGE_BATCH_SIZE: 3

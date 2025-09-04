@@ -116,10 +116,11 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
                             handle_ping(&mut session, msg).await;
                         }
                         Some(Ok(Message::Close(_))) => {
+                            tracing::info!("Received close message");
                             break;
                         }
                         Some(Err(e)) => {
-                            tracing::error!("Error: {:?}", e);
+                            tracing::error!("Received message error: {:?}", e);
                         }
                         Some(res) => {
                             match res {
@@ -127,11 +128,12 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
                                     tracing::info!("Received unknown message: {:?}", msg);
                                 }
                                 Err(e) => {
-                                    tracing::error!("Error: {:?}", e);
+                                    tracing::error!("Received unknown message error: {:?}", e);
                                 }
                             }
                         }
                         None => {
+                            tracing::info!("Received none message");
                             break;
                         }
                     }
