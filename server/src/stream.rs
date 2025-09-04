@@ -94,9 +94,8 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
         let mut images: Vec<Vec<u8>> = Vec::new();
         let mut last_prompt: Option<String> = None;
 
-        // Ticker setup: fires every 30 seconds, but can be reset
-        let mut ping_interval = time::interval_at(Instant::now() + Duration::from_secs(30), Duration::from_secs(5));
-        ping_interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
+        let mut inference_interval = time::interval_at(Instant::now() + Duration::from_secs(30), Duration::from_secs(10));
+        inference_interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
 
         loop {
             select! {
@@ -104,12 +103,12 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
                     match msg {
                         Some(Ok(Message::Binary(bin))) => {
                             tracing::info!("Received binary message: {:?}", bin.len());
-                            ping_interval.reset();
+                            inference_interval.reset();
                             handle_binary(&mut images, bin, &mut session, &last_prompt, model.clone(), ollama_host.clone(), image_batch_size).await;
                         }
                         Some(Ok(Message::Text(text))) => {
                             tracing::info!("Received text message: {:?}", text);
-                            ping_interval.reset();
+                            inference_interval.reset();
                             handle_text(&mut session, &mut images, text.to_string(), &mut last_prompt, model.clone(), ollama_host.clone()).await;
                         }
                         Some(Ok(Message::Ping(msg))) => {
@@ -138,14 +137,12 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
                         }
                     }
                 }
-                _ = ping_interval.tick().fuse() => {
+                _ = inference_interval.tick().fuse() => {
                     // On ticker tick, run handle_text if we have a prompt
                     if let Some(prompt) = last_prompt.clone() {
                         tracing::info!("Ticker fired: running handle_text with last prompt");
                         handle_text(&mut session, &mut images, prompt.clone(), &mut last_prompt, model.clone(), ollama_host.clone()).await;
                     }
-                    // Reset ticker
-                    ping_interval.reset();
                 }
             }
         }
