@@ -118,18 +118,14 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
                             tracing::info!("Received close message");
                             break;
                         }
+                        Some(Ok(Message::Pong(_))) => {
+                            tracing::info!("Received pong message");
+                        }
                         Some(Err(e)) => {
                             tracing::error!("Received message error: {:?}", e);
                         }
-                        Some(res) => {
-                            match res {
-                                Ok(msg) => {
-                                    tracing::info!("Received unknown message: {:?}", msg);
-                                }
-                                Err(e) => {
-                                    tracing::error!("Received unknown message error: {:?}", e);
-                                }
-                            }
+                        Some(Ok(res)) => {
+                            tracing::info!("Received unknown message: {:?}", res);
                         }
                         None => {
                             tracing::info!("Received none message");
@@ -138,9 +134,12 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
                     }
                 }
                 _ = inference_interval.tick().fuse() => {
-                    // On ticker tick, run handle_text if we have a prompt
+                    if let Err(e) = session.ping(b"ping").await {
+                        tracing::error!("Error sending ping: {:?}", e);
+                        break;
+                    }
                     if let Some(prompt) = last_prompt.clone() {
-                        tracing::info!("Ticker fired: running handle_text with last prompt");
+                        tracing::info!("Inference interval fired: running handle_text with last prompt");
                         handle_text(&mut session, &mut images, prompt.clone(), &mut last_prompt, model.clone(), ollama_host.clone()).await;
                     }
                 }
