@@ -111,14 +111,16 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
                             inference_interval.reset();
                             handle_text(&mut session, &mut images, text.to_string(), &mut last_prompt, model.clone(), ollama_host.clone()).await;
                         }
-                        Some(Ok(Message::Ping(msg))) => {
-                            handle_ping(&mut session, msg).await;
-                        }
                         Some(Ok(Message::Close(_))) => {
                             tracing::info!("Received close message");
                             break;
                         }
+                        Some(Ok(Message::Ping(_))) => {
+                            inference_interval.reset();
+                            tracing::info!("Received ping message");
+                        }
                         Some(Ok(Message::Pong(_))) => {
+                            inference_interval.reset();
                             tracing::info!("Received pong message");
                         }
                         Some(Err(e)) => {

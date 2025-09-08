@@ -18,6 +18,8 @@ spec:
         {{- include "vlm-node.nodeSelectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: server
     spec:
+      securityContext:
+        fsGroup: 101
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "vlm-node.serviceAccountName" . }}
       {{- end }}
@@ -38,7 +40,6 @@ spec:
           fsGroup: 0
           runAsGroup: 0
           runAsUser: 0
-          allowPrivilegeEscalation: false
         volumeMounts:
           - name: data
             mountPath: /root/.ollama/models
