@@ -115,8 +115,9 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
                             tracing::info!("Received close message");
                             break;
                         }
-                        Some(Ok(Message::Ping(_))) => {
+                        Some(Ok(Message::Ping(msg))) => {
                             inference_interval.reset();
+                            handle_ping(&mut session, msg).await;
                             tracing::info!("Received ping message");
                         }
                         Some(Ok(Message::Pong(_))) => {

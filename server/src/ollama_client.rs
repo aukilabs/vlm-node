@@ -12,6 +12,7 @@ pub async fn pull_ollama_model(model_name: &str, ollama_host: &str) -> Result<()
     let client = reqwest::Client::new();
     let url = format!("{}/api/pull", ollama_host);
     let body = json!({ "model": model_name });
+    tracing::info!("Pulling model {} from Ollama: {:?}", model_name, url);
 
     let resp = client
         .post(url)
