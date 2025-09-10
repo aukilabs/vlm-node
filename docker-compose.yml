@@ -73,6 +73,8 @@ services:
         condition: service_healthy
       change-data-folder-ownership:
         condition: service_completed_successfully
+      ollama:
+        condition: service_completed_successfully
     volumes:
       - ./data:/app/data
   ollama:
