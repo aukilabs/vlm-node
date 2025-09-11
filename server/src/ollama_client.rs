@@ -31,7 +31,7 @@ pub async fn pull_ollama_model(model_name: &str, ollama_host: &str) -> Result<()
     while let Some(chunk) = stream.next().await {
         if let Ok(chunk) = chunk {
             let response: OllamaPullResponse = serde_json::from_slice(&chunk).unwrap();
-            if response.status == "ready" {
+            if response.status == "success" {
                 break;
             }
             tracing::info!("Received response from Ollama pull: {:?}", response.status);
