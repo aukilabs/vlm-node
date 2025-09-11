@@ -69,7 +69,7 @@ jobs:
         uses: clowdhaus/argo-cd-action/@v2.3.0
         with:
           command: login
-          options: --username admin --password "${{ secrets.argocd_password }}" --grpc-web "argocd.dev.aukiverse.com:443"
+          options: --username admin --password "${{ secrets.ARGOCD_PASSWORD }}" --grpc-web "argocd.dev.aukiverse.com:443"
       - name: Sync ArgoCD app
         uses: clowdhaus/argo-cd-action/@v2.3.0
         with:

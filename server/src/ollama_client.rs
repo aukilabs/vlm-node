@@ -11,10 +11,37 @@ struct OllamaPullResponse {
     status: String
 }
 
+#[derive(Deserialize)]
+struct OllamaModel {
+    model: String,
+    name: String
+}
+
+#[derive(Deserialize)]
+struct OllamaPSResponse {
+    models: Vec<OllamaModel>
+}
+
 /// Pulls a model from Ollama by making a POST request to the Ollama server.
 /// Returns Ok(()) if the pull was successful, or an error otherwise.
 pub async fn pull_ollama_model(model_name: &str, ollama_host: &str) -> Result<(), Box<dyn std::error::Error>> {
     let client = reqwest::Client::new();
+
+    // Check if the model exists before pulling
+    let check_url = format!("{}/api/ps", ollama_host);
+    let check_resp = client
+        .post(&check_url)
+        .send()
+        .await?;
+
+    if check_resp.status().is_success() {
+        let resp_json: OllamaPSResponse = check_resp.json().await?;
+        if resp_json.models.iter().any(|model| model.model == model_name) {
+            tracing::info!("Model '{}' already exists on Ollama, skipping pull.", model_name);
+            return Ok(());
+        }
+    }
+
     let url = format!("{}/api/pull", ollama_host);
     let body = json!({ "model": model_name, "stream": true });
     tracing::info!("Pulling model {} from Ollama: {:?}", model_name, url);

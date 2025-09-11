@@ -53,9 +53,31 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
-  server-worker:
+  server:
     build:
-      context: .
+      context: server
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_URL=postgres://compute_node_user:compute_node_password@postgres:5432/compute_node_db
+      - DATA_DIR=/app/data
+      - OLLAMA_HOST=http://ollama:11434
+    env_file:
+      - .env
+      - .env.local
+    ports:
+      - "8080:8080"
+    labels:
+      com.github.nginx-proxy.nginx-proxy.keepalive: 20
+    depends_on:
+      postgres:
+        condition: service_healthy
+      change-data-folder-ownership:
+        condition: service_completed_successfully
+    volumes:
+      - ./data:/app/data
+  worker:
+    build:
+      context: ai
       dockerfile: Dockerfile
     environment:
       - POSTGRES_URL=postgres://compute_node_user:compute_node_password@postgres:5432/compute_node_db
