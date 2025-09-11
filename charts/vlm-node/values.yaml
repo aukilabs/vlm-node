@@ -36,7 +36,7 @@ worker:
   replicas: 1
   image:
     repository: 026987513085.dkr.ecr.us-east-1.amazonaws.com/vlm-node-worker
-    tag: "latest"
+    tag: "d0f9e81018d333ef5867d8edb53abc82e11f3194"
     pullPolicy: Always
   ports:
     main: 8081 
