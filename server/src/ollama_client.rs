@@ -30,7 +30,7 @@ pub async fn pull_ollama_model(model_name: &str, ollama_host: &str) -> Result<()
     // Check if the model exists before pulling
     let check_url = format!("{}/api/tags", ollama_host);
     let check_resp = client
-        .post(&check_url)
+        .get(&check_url)
         .send()
         .await?;
 
