@@ -16,7 +16,7 @@ jobs:
     uses: aukilabs/github-actions/.github/workflows/rust-workflow.yml@main
     with:
       work_dir: server
-      docker_context: .
+      docker_context: server
       enable_build: true
       enable_test: false
       image_name: vlm-node-server
