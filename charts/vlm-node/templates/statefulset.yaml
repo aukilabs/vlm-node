@@ -31,7 +31,8 @@ spec:
         topology.kubernetes.io/zone: ap-southeast-1a
       containers:
       - name: ollama
-        image: alpine/ollama:latest
+        image: "{{ .Values.ollama.image.repository }}:{{ .Values.ollama.image.tag }}"
+        imagePullPolicy: {{ .Values.ollama.image.pullPolicy }}
         ports:
         - name: ollama-http
           containerPort: 11434
@@ -43,6 +44,8 @@ spec:
         volumeMounts:
           - name: data
             mountPath: /root/.ollama/models
+        resources:
+          {{- toYaml .Values.ollama.resources | nindent 10 }}
       - name: server
         image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
         imagePullPolicy: {{ .Values.server.image.pullPolicy }}
@@ -82,6 +85,44 @@ spec:
           httpGet:
             path: /health
             port: admin
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      - name: worker
+        image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
+        imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+        securityContext:
+          fsGroup: 101
+          runAsGroup: 101
+          runAsUser: 100
+        ports:
+        - name: worker-http
+          containerPort: {{ .Values.worker.ports.main }}
+          protocol: TCP
+        env:
+        {{- range $key, $value := .Values.worker.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        envFrom:
+        - configMapRef:
+            name: {{ include "vlm-node.configMapName" . }}
+        - secretRef:
+            name: {{ include "vlm-node.secretName" . }}
+        resources:
+          {{- toYaml .Values.server.resources | nindent 10 }}
+        volumeMounts:
+        - name: data
+          mountPath: {{ .Values.storage.mountPath }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: worker-http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: worker-http
           initialDelaySeconds: 5
           periodSeconds: 5
       volumes:

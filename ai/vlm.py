@@ -1,14 +1,16 @@
 import json
-import ollama
 import os
 import re
 import sys
 import requests
 from jobs import finish_processing, fail_job, complete_job
 from logger_config import get_logger
+from ollama import Client
 
 # Setup logger
 logger = get_logger("vlm")
+
+ollama = Client(host=os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
 
 def ensure_model_available(model_name):
     """
@@ -92,13 +94,12 @@ def run_inference(vlm_prompt, prompt, image_paths):
 
     for image_path in image_paths:
         logger.info("Processing image: " + image_path)
-        res = ollama.chat(
+        res = ollama.generate(
             model=vlm_model,
-            messages=[
-                {"role": "user", "content": vlm_prompt, "images": [image_path]}
-            ],
+            prompt=vlm_prompt,
+            images=[image_path],
         )
-        results += '"' + parse_image_id(image_path) + '",' + '"' + parse_image_timestamp(image_path) + '",' + '"' + res.message.content + '"\n'
+        results += '"' + parse_image_id(image_path) + '",' + '"' + parse_image_timestamp(image_path) + '",' + '"' + res.response + '"\n'
         logger.info("Inference output: " + str(res))
 
     logger.info("Inference completed")
@@ -111,17 +112,15 @@ def run_inference(vlm_prompt, prompt, image_paths):
     )
 
     # Run the LLM for temporal reasoning
-    temporal_res = ollama.chat(
+    temporal_res = ollama.generate(
         model=llm_model,
-        messages=[
-            {"role": "user", "content": temporal_prompt}
-        ],
+        prompt=temporal_prompt,
     )
-    logger.info("Temporal reasoning output: " + temporal_res.message.content)
+    logger.info("Temporal reasoning output: " + temporal_res.response)
 
     return {
         "logs": results,
-        "temporal_output": temporal_res.message.content
+        "temporal_output": temporal_res.response
     }
 
 def send_webhook(webhook_url, job_id, data, error):

@@ -5,9 +5,7 @@ on:
     branches: [ main, 'feature/*', 'fix/*', 'chore/*' ]
     paths:
       - 'server/**'
-      - 'ai/**'
-      - 'Dockerfile'
-      - '.github/workflows/build-server-worker.yml'
+      - '.github/workflows/build-server.yml'
 
 concurrency:
   group: build-server-${{ github.ref }}
