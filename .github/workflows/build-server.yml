@@ -5,9 +5,7 @@ on:
     branches: [ main, 'feature/*', 'fix/*', 'chore/*' ]
     paths:
       - 'server/**'
-      - 'ai/**'
-      - 'Dockerfile'
-      - '.github/workflows/build-server-worker.yml'
+      - '.github/workflows/build-server.yml'
 
 concurrency:
   group: build-server-${{ github.ref }}
@@ -18,7 +16,7 @@ jobs:
     uses: aukilabs/github-actions/.github/workflows/rust-workflow.yml@main
     with:
       work_dir: server
-      docker_context: .
+      docker_context: server
       enable_build: true
       enable_test: false
       image_name: vlm-node-server

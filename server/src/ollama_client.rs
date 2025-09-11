@@ -6,12 +6,17 @@ use serde_json::json;
 use futures_util::StreamExt;
 use base64::Engine;
 
+#[derive(Deserialize)]
+struct OllamaPullResponse {
+    status: String
+}
+
 /// Pulls a model from Ollama by making a POST request to the Ollama server.
 /// Returns Ok(()) if the pull was successful, or an error otherwise.
 pub async fn pull_ollama_model(model_name: &str, ollama_host: &str) -> Result<(), Box<dyn std::error::Error>> {
     let client = reqwest::Client::new();
     let url = format!("{}/api/pull", ollama_host);
-    let body = json!({ "model": model_name, "stream": false });
+    let body = json!({ "model": model_name, "stream": true });
     tracing::info!("Pulling model {} from Ollama: {:?}", model_name, url);
 
     let resp = client
@@ -20,15 +25,24 @@ pub async fn pull_ollama_model(model_name: &str, ollama_host: &str) -> Result<()
         .send()
         .await?;
 
-    if resp.status().is_success() {
-        tracing::info!("Pulled model from Ollama: {:?}", model_name);
-        Ok(())
-    } else {
-        let status = resp.status();
-        let message = resp.text().await.unwrap();
-        let message = format!("Ollama error: {status}: {message}");
-        Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, message)))
+    let mut stream = resp.bytes_stream();
+
+    tracing::info!("Received response from Ollama pull");
+    while let Some(chunk) = stream.next().await {
+        if let Ok(chunk) = chunk {
+            let response: OllamaPullResponse = serde_json::from_slice(&chunk).unwrap();
+            if response.status == "ready" {
+                break;
+            }
+            tracing::info!("Received response from Ollama pull: {:?}", response.status);
+        } else {
+            let err = chunk.err().unwrap();
+            tracing::error!("Error sending chunk to channel: {:?}", err);
+            return Err(err.into());
+        }
     }
+
+    Ok(())
 }
 
 #[derive(Deserialize, Serialize)]

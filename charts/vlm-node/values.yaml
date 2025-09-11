@@ -17,11 +17,11 @@ server:
     pullPolicy: Always
   resources:
     requests:
-      memory: "2Gi"
-      cpu: "500m"
+      memory: "256Mi"
+      cpu: "100m"
     limits:
-      memory: "16Gi"
-      cpu: "2"
+      memory: "256Mi"
+      cpu: "100m"
   ports:
     main: 8080
     admin: 18190
@@ -29,6 +29,37 @@ server:
     - key: "dedicated"
       value: "vlmGroup"
       effect: "NoSchedule"
+
+# Worker configuration
+worker:
+  enabled: true
+  replicas: 1
+  image:
+    repository: 026987513085.dkr.ecr.us-east-1.amazonaws.com/vlm-node-worker
+    tag: "d0f9e81018d333ef5867d8edb53abc82e11f3194"
+    pullPolicy: Always
+  ports:
+    main: 8081 
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "100m"
+
+ollama:
+  image:
+    repository: alpine/ollama
+    tag: "0.11.10"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "500m"
+    limits:
+      memory: "16Gi"
+      cpu: "2"
 
 # UI configuration
 ui:

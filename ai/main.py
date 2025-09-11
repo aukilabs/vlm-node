@@ -66,7 +66,30 @@ def threaded_job(job):
     process_job(conn, job)
     conn.close()
 
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/health":
+            self.send_response(200)
+            self.send_header("Content-type", "text/plain")
+            self.end_headers()
+            self.wfile.write(b"ok")
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+def run_health_server():
+    server = HTTPServer(("0.0.0.0", 8081), HealthHandler)
+    logger.info("Health server running on port 8081")
+    server.serve_forever()
+
 if __name__ == "__main__":
+    # Start health server in a background thread
+    health_thread = threading.Thread(target=run_health_server, daemon=True)
+    health_thread.start()
+
     if USE_MULTITHREAD:
         multi_thread_main()
     else:
