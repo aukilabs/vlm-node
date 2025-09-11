@@ -11,7 +11,7 @@ use base64::Engine;
 pub async fn pull_ollama_model(model_name: &str, ollama_host: &str) -> Result<(), Box<dyn std::error::Error>> {
     let client = reqwest::Client::new();
     let url = format!("{}/api/pull", ollama_host);
-    let body = json!({ "model": model_name });
+    let body = json!({ "model": model_name, "stream": false });
     tracing::info!("Pulling model {} from Ollama: {:?}", model_name, url);
 
     let resp = client
