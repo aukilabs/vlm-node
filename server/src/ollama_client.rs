@@ -18,7 +18,7 @@ struct OllamaModel {
 }
 
 #[derive(Deserialize)]
-struct OllamaPSResponse {
+struct OllamaListModelsResponse {
     models: Vec<OllamaModel>
 }
 
@@ -28,14 +28,14 @@ pub async fn pull_ollama_model(model_name: &str, ollama_host: &str) -> Result<()
     let client = reqwest::Client::new();
 
     // Check if the model exists before pulling
-    let check_url = format!("{}/api/ps", ollama_host);
+    let check_url = format!("{}/api/tags", ollama_host);
     let check_resp = client
         .post(&check_url)
         .send()
         .await?;
 
     if check_resp.status().is_success() {
-        let resp_json: OllamaPSResponse = check_resp.json().await?;
+        let resp_json: OllamaListModelsResponse = check_resp.json().await?;
         if resp_json.models.iter().any(|model| model.model == model_name) {
             tracing::info!("Model '{}' already exists on Ollama, skipping pull.", model_name);
             return Ok(());
