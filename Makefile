@@ -7,7 +7,7 @@ ACTIVATE=. $(VENV)/bin/activate
 # Default target
 .DEFAULT_GOAL := help
 
-.PHONY: server venv install clean build worker docker
+.PHONY: server venv install clean worker docker
 
 help:
 	@echo "make venv        - Create virtual environment"
