@@ -14,7 +14,6 @@ struct OllamaPullResponse {
 #[derive(Deserialize)]
 struct OllamaModel {
     model: String,
-    name: String
 }
 
 #[derive(Deserialize)]

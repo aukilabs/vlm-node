@@ -73,6 +73,8 @@ services:
         condition: service_healthy
       change-data-folder-ownership:
         condition: service_completed_successfully
+      ollama:
+        condition: service_completed_successfully
     volumes:
       - ./data:/app/data
   worker:
@@ -87,13 +89,15 @@ services:
       - .env
       - .env.local
     ports:
-      - "8080:8080"
+      - "8081:8081"
     labels:
       com.github.nginx-proxy.nginx-proxy.keepalive: 20
     depends_on:
       postgres:
         condition: service_healthy
       change-data-folder-ownership:
+        condition: service_completed_successfully
+      ollama:
         condition: service_completed_successfully
     volumes:
       - ./data:/app/data
