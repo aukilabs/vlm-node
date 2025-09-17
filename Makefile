@@ -23,7 +23,7 @@ venv:
 
 install: venv
 	@echo "Activating venv and installing requirements..."
-	@$(ACTIVATE) pip install --upgrade pip && pip install -r ai/requirements.txt
+	@$(ACTIVATE) pip install --upgrade pip && pip install -r worker/requirements.txt
 	@echo "Installed requirements"
 
 worker:
@@ -34,7 +34,7 @@ worker:
 	@make install
 	@docker compose up postgres ollama -d
 	@echo "Loading environment variables from .env.local..."
-	@set -a; . .env; . .env.local; set +a && . $(VENV)/bin/activate && $(PYTHON) ai/main.py
+	@set -a; . .env; . .env.local; set +a && . $(VENV)/bin/activate && $(PYTHON) worker/main.py
 
 server:
 	@if ! command -v cargo &> /dev/null; then \

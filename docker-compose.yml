@@ -79,7 +79,7 @@ services:
       - ./data:/app/data
   worker:
     build:
-      context: ai
+      context: worker
       dockerfile: Dockerfile
     environment:
       - POSTGRES_URL=postgres://compute_node_user:compute_node_password@postgres:5432/compute_node_db
