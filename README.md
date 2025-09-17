@@ -164,7 +164,6 @@ export function initializeWebSocket(): WebSocket {
                         typeof parsed.done === "boolean"
                     ) {
                         response += parsed.response;
-                        console.log("Compute Node response:", text, parsed.response);
                         if (parsed.done) {
                             console.log("Compute Node response done:", response);
                             response = "";
