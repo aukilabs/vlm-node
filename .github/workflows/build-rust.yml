@@ -11,15 +11,14 @@ on:
         required: true
       argocd_password:
         required: false
+      argocd_host:
+        required: false
       test_env_vars:
         required: false
         description: |
           Environment variables for tests in JSON format, e.g. `{"VAR1": "value1", "VAR2": "value2"}`.
           If not provided, no environment variables will be set.
     inputs:
-      argocd_host:
-        type: string
-        required: false
       argocd_app:
         type: string
       work_dir:
@@ -277,7 +276,7 @@ jobs:
         uses: clowdhaus/argo-cd-action/@v2.3.0
         with:
           command: login
-          options: --username admin --password "${{ secrets.argocd_password }}" --grpc-web "${{ inputs.argocd_host }}:443"
+          options: --username admin --password "${{ secrets.argocd_password }}" --grpc-web "${{ secrets.argocd_host }}:443"
       - name: Sync ArgoCD app
         uses: clowdhaus/argo-cd-action/@v2.3.0
         if: ${{ inputs.enable_sync }}
