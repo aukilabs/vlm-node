@@ -106,23 +106,13 @@ curl http://localhost:8080/api/v1/jobs?limit=10
 
 ### Local Development
 
-#### 1. Start the Database
-```bash
-docker compose up postgres -d
-```
-
-#### 2. Start Ollama
-```bash
-docker compose up ollama -d
-```
-
-#### 3. Start the Server
+#### 1. Start the Server
 ```bash
 # start ollama for cpu only by default
 make server
 ```
 
-#### 4. Start the Worker
+#### 2. Start the Worker
 ```bash
 # start ollama for cpu only by default
 make worker
@@ -275,22 +265,8 @@ export function sendPhotoToComputeNode(photo: PhotoData): void {
 
 ### Common Issues
 
-1. **Ollama model not found**:
-   ```bash
-   docker exec -it ollama ollama pull moondream:1.8b
-   ```
-
-2. **Database connection failed**:
-   - Check if PostgreSQL is running
-   - Verify connection string in environment variables
-
-3. **Worker not processing jobs**:
-   - Check worker logs: `docker compose logs worker`
-   - Ensure Ollama is accessible from worker container
-
-4. **UI not loading**:
-   - Check if UI container is running: `docker compose ps`
-   - Verify port 3000 is not in use
+1. **Server doesn't start**:
+   If the model is not already loaded into Ollama's memory, the server may need to pull the model first, which can take some time. To check the progress, run `docker compose logs -f ollama-cpu` and look for messages indicating that the model is being downloaded.
 
 ### Logs
 
