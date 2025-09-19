@@ -61,7 +61,7 @@ To use different models, update the `VLM_MODEL` and `LLM_MODEL` environment vari
 
 1. **Clone the repository**:
 ```bash
-git clone <repository-url>
+git clone git@github.com:aukilabs/vlm-node.git
 cd vlm-node
 ```
 
@@ -74,7 +74,7 @@ POSEMESH_PASSWORD=
 
 3. **Start all services**:
 
-3.a **(Optional)Install the NVIDIA Container Toolkit**
+**(Optional)Install the NVIDIA Container Toolkit**
 https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installation
 
 ```bash
