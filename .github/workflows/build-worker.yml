@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   build:
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/build-and-deploy.yml
     with:
       docker_context: worker
       image_name: vlm-node-worker
