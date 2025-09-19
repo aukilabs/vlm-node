@@ -163,6 +163,8 @@ curl "http://localhost:8080/api/v1/jobs/{job_id}"
 
 You can perform real-time image inference by connecting to the WebSocket endpoint at `ws://localhost:8080/api/v1/ws` (or `wss://domain.com/api/v1/ws` for secure connections).
 
+> **Note:** None of the images or results are persisted.
+
 **Protocol Overview:**
 - **Image Upload:**
   Send image data as binary messages over the WebSocket. The server will process images in batches of size `IMAGE_BATCH_SIZE` or after a 10-second timeout, whichever comes first.
