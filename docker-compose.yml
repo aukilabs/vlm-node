@@ -71,8 +71,6 @@ services:
         condition: service_healthy
       change-data-folder-ownership:
         condition: service_completed_successfully
-      ollama:
-        condition: service_completed_successfully
     volumes:
       - ./data:/app/data
   worker:
@@ -94,12 +92,10 @@ services:
         condition: service_healthy
       change-data-folder-ownership:
         condition: service_completed_successfully
-      ollama:
-        condition: service_completed_successfully
     volumes:
       - ./data:/app/data
-  ollama:
-    image: ollama/ollama:latest
+  ollama-cpu:
+    image: alpine/ollama:latest
     environment:
       HTTP_PROXY: ""
       HTTPS_PROXY: ""
@@ -109,7 +105,29 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - ./data/models:/root/.ollama/models
+      - ./data/.ollama:/root/.ollama
+  ollama-gpu:
+    image: ollama/ollama:latest
+    environment:
+      HTTP_PROXY: ""
+      HTTPS_PROXY: ""
+      http_proxy: ""
+      https_proxy: ""
+      NO_PROXY: "localhost,127.0.0.1,.local"
+    ports:
+      - "11435:11434"
+    volumes:
+      - ./data/.ollama:/root/.ollama
+    shm_size: 16gb
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    # For Compose v2+ with NVIDIA runtime, uncomment below:
+    # runtime: nvidia
 volumes:
   postgres_data:
   conf:
