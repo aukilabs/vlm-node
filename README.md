@@ -48,7 +48,7 @@ docker compose ps
 curl http://localhost:8080/api/v1/jobs?limit=10
 ```
 
-### Manual Setup(Local Development)
+### Local Development
 
 #### 1. Start the Database
 ```bash

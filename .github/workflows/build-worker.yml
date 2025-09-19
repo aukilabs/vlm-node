@@ -6,6 +6,7 @@ on:
     paths:
       - 'worker/**'
       - '.github/workflows/build-worker.yml'
+      - '.github/workflows/build-and-deploy.yml'
 
 concurrency:
   group: build-worker-${{ github.ref }}

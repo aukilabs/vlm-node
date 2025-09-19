@@ -48,15 +48,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
   ui:
-    build:
-      context: ui
-      dockerfile: Dockerfile
+    image: aukilabs/vlm-node-ui:stable
+    pull_policy: always
     ports:
       - "3000:3000"
   server:
-    build:
-      context: server
-      dockerfile: Dockerfile
+    image: aukilabs/vlm-node-server:stable
+    pull_policy: always
     environment:
       - POSTGRES_URL=postgres://compute_node_user:compute_node_password@postgres:5432/compute_node_db
       - DATA_DIR=/app/data
@@ -78,9 +76,8 @@ services:
     volumes:
       - ./data:/app/data
   worker:
-    build:
-      context: worker
-      dockerfile: Dockerfile
+    image: aukilabs/vlm-node-worker:stable
+    pull_policy: always
     environment:
       - POSTGRES_URL=postgres://compute_node_user:compute_node_password@postgres:5432/compute_node_db
       - DATA_DIR=/app/data

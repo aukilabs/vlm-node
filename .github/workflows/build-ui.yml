@@ -6,6 +6,7 @@ on:
     paths:
       - 'ui/**'
       - '.github/workflows/build-ui.yml'
+      - '.github/workflows/build-and-deploy.yml'
 
 concurrency:
   group: build-ui-${{ github.ref }}
