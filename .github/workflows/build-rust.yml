@@ -1,4 +1,6 @@
 name: Rust workflow
+permissions:
+  contents: read
 
 on:
   workflow_call:
