@@ -6,6 +6,7 @@ on:
     paths:
       - 'server/**'
       - '.github/workflows/build-server.yml'
+      - '.github/workflows/build-rust.yml'
 
 concurrency:
   group: build-server-${{ github.ref }}
@@ -13,7 +14,7 @@ concurrency:
 
 jobs:
   build-and-deploy:
-    uses: aukilabs/github-actions/.github/workflows/rust-workflow.yml@main
+    uses: ./.github/workflows/build-rust.yml
     with:
       work_dir: server
       docker_context: server
@@ -24,8 +25,7 @@ jobs:
       enable_restart: ${{ github.ref == 'refs/heads/main' }}
       argocd_host: argocd.dev.aukiverse.com
       argocd_app: vlm-node
-      aws_region: ${{ vars.GLOBAL_COMMON_AWS_REGION }}
     secrets:
-      aws_access_key: ${{ secrets.GLOBAL_COMMON_AWS_ACCESS_KEY }}
-      aws_secret_access_key: ${{ secrets.GLOBAL_COMMON_AWS_SECRET_ACCESS_KEY }}
+      docker_registry_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_registry_password: ${{ secrets.DOCKER_PASSWORD }}
       argocd_password: ${{ secrets.GLOBAL_DEV_ARGOCD_PASSWORD }}

@@ -4,8 +4,9 @@ on:
   push:
     branches: [ main, 'feature/*', 'fix/*', 'chore/*' ]
     paths:
-      - 'ai/**'
+      - 'worker/**'
       - '.github/workflows/build-worker.yml'
+      - '.github/workflows/build-and-deploy.yml'
 
 concurrency:
   group: build-worker-${{ github.ref }}
@@ -13,70 +14,11 @@ concurrency:
 
 jobs:
   build:
-    name: build
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v4
-
-      - name: Free up space
-        run: |
-          sudo sudo rm -rf /usr/share/dotnet  # ~20GB
-          sudo rm -rf /opt/ghc           # ~4GB
-          sudo rm -rf /usr/local/lib/android  # ~10GB
-
-      # Build and push Docker image
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.GLOBAL_COMMON_AWS_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.GLOBAL_COMMON_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.GLOBAL_COMMON_AWS_REGION }}
-
-      - name: Log in to AWS ECR
-        id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build Docker metadata
-        id: docker-metadata
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ steps.ecr-login.outputs.registry }}/vlm-node-worker
-          tags: |
-            type=sha,format=long,prefix=
-            type=raw,enable={{is_not_default_branch}},value={{branch}}
-            type=raw,enable={{is_default_branch}},value=latest
-            type=ref,event=tag
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          platforms: linux/amd64,linux/arm64
-          push: true
-          context: ai
-          tags: ${{ steps.docker-metadata.outputs.tags }}
-
-  deploy:
-    name: Deploy
-    needs: build
-    if: ${{ github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Authenticate ArgoCD
-        uses: clowdhaus/argo-cd-action/@v2.3.0
-        with:
-          command: login
-          options: --username admin --password "${{ secrets.ARGOCD_PASSWORD }}" --grpc-web "argocd.dev.aukiverse.com:443"
-      - name: Sync ArgoCD app
-        uses: clowdhaus/argo-cd-action/@v2.3.0
-        with:
-          command: app sync "vlm-node"
-          options: --grpc-web --async
-      - name: Restart ArgoCD app
-        uses: clowdhaus/argo-cd-action/@v2.3.0
-        with:
-          command: app actions run "vlm-node" restart
-          options: --kind StatefulSet --grpc-web
+    uses: ./.github/workflows/build-and-deploy.yml
+    with:
+      docker_context: worker
+      image_name: vlm-node-worker
+      docker_platforms: linux/amd64,linux/arm64
+    secrets:
+      docker_registry_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_registry_password: ${{ secrets.DOCKER_PASSWORD }}

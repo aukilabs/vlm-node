@@ -20,7 +20,7 @@ This Helm chart deploys a compute node with separate server and worker component
         ▼             ▼             ▼
 ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
 │    UI       │ │   Server    │ │   Worker    │
-│   Port 3000 │ │  Port 8080  │ │  Port 8080  │
+│   Port 3000 │ │  Port 8080  │ │  Port 8081  │
 │             │ │             │ │             │
 │  • Serves   │ │  • Handles  │ │  • Processes│
 │    static   │ │    HTTP     │ │    jobs     │
