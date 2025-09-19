@@ -48,6 +48,8 @@ jobs:
       docker_context: worker
       image_name: vlm-node-worker
       docker_platforms: linux/amd64,linux/arm64
+      enable_sync: true
+      enable_restart: true
     secrets:
       docker_registry_username: ${{ secrets.DOCKER_USERNAME }}
       docker_registry_password: ${{ secrets.DOCKER_PASSWORD }}

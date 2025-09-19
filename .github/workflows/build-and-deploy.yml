@@ -23,6 +23,12 @@ on:
         required: false
         type: string
         default: ''
+      enable_sync:
+        default: false
+        type: boolean
+      enable_restart:
+        default: false
+        type: boolean
     secrets:
       docker_registry_username:
         required: true
@@ -76,7 +82,7 @@ jobs:
   deploy:
     name: Deploy
     needs: build-and-push
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ inputs.enable_sync }}
     runs-on: ubuntu-24.04
     steps:
       - name: Authenticate ArgoCD
@@ -85,18 +91,21 @@ jobs:
           command: login
           options: --username admin --password "${{ secrets.argocd_password }}" --grpc-web "${{ secrets.argocd_host }}:443"
       - name: Sync ArgoCD app
+        if: ${{ inputs.enable_sync }}
         uses: clowdhaus/argo-cd-action/@v2.3.0
         with:
           command: app sync "vlm-node"
           options: --grpc-web --async
 
       - name: Restart vlm-node-server StatefulSet
+        if: ${{ inputs.enable_restart }}
         uses: clowdhaus/argo-cd-action/@v2.3.0
         with:
           command: app actions run "vlm-node" restart
           options: --kind StatefulSet --resource-name vlm-node-server --grpc-web
 
       - name: Restart vlm-node-ui Deployment
+        if: ${{ inputs.enable_restart }}
         uses: clowdhaus/argo-cd-action/@v2.3.0
         with:
           command: app actions run "vlm-node" restart

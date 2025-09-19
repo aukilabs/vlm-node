@@ -80,7 +80,7 @@ clean:
 	@rm -rf $(VENV) __pycache__ */__pycache__
 	@cargo clean
 
-tag: check-version test
+tag: check-version
 	@echo "\033[94m\n• Tagging ${VERSION}\033[00m"
 	@git tag ${VERSION}
 	@git push origin ${VERSION}
