@@ -159,14 +159,18 @@ curl "http://localhost:8080/api/v1/jobs?limit=100"
 curl "http://localhost:8080/api/v1/jobs/{job_id}"
 ```
 
-## Realtime Image Inference
+## Real-Time Image Inference
 
-You can perform realtime image inference using a WebSocket connection at `ws://localhost:8080/api/v1/ws`(`wss://domain.com/api/v1/ws`).
+You can perform real-time image inference by connecting to the WebSocket endpoint at `ws://localhost:8080/api/v1/ws` (or `wss://domain.com/api/v1/ws` for secure connections).
 
-- **How it works:**
-  - Send the image as binary data over the WebSocket.
-  - Send the prompt as a text message.
-  - The server will respond with inference results.
+**Protocol Overview:**
+- **Image Upload:**
+  Send image data as binary messages over the WebSocket. The server will process images in batches of size `IMAGE_BATCH_SIZE` or after a 10-second timeout, whichever comes first.
+- **Prompt Submission:**
+  Send the prompt as a UTF-8 encoded text message.
+- **Server Response:**
+  The server returns inference results as binary WebSocket messages containing a JSON object:
+  `{"done": <bool>, "response": <string>}`
 
 **Note:**  
 If your client is not written in JavaScript, you must also respond to `pong` messages from the server to keep the connection alive.
