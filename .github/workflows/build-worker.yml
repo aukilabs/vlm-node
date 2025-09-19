@@ -2,11 +2,9 @@ name: Build Worker
 
 on:
   push:
-    branches: [ main, 'feature/*', 'fix/*', 'chore/*' ]
+    branches: [ 'feature/*', 'fix/*', 'chore/*' ]
     paths:
       - 'worker/**'
-      - '.github/workflows/build-worker.yml'
-      - '.github/workflows/build-and-deploy.yml'
 
 concurrency:
   group: build-worker-${{ github.ref }}

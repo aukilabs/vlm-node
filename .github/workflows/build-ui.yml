@@ -2,11 +2,9 @@ name: Build UI
 
 on:
   push:
-    branches: [ main, 'feature/*', 'fix/*', 'chore/*' ]
+    branches: [ 'feature/*', 'fix/*', 'chore/*' ]
     paths:
       - 'ui/**'
-      - '.github/workflows/build-ui.yml'
-      - '.github/workflows/build-and-deploy.yml'
 
 concurrency:
   group: build-ui-${{ github.ref }}

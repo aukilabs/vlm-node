@@ -35,8 +35,8 @@ jobs:
 
       - name: Retag and push
         run: |
-          for tag in ${{ steps.docker-metadata.outputs.tags }}; do
+          echo "${{ steps.docker-metadata.outputs.tags }}" | while read -r tag; do
             echo "Promoting to $tag"
-            docker tag aukilabs/${{ matrix.app }}:${{ github.sha }} $tag
-            docker push $tag
+            docker tag aukilabs/${{ matrix.app }}:${{ github.sha }} "$tag"
+            docker push "$tag"
           done

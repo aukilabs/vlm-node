@@ -1,0 +1,51 @@
+name: Build All
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-server:
+    uses: ./.github/workflows/build-rust.yml
+    with:
+      work_dir: server
+      docker_context: server
+      enable_build: true
+      enable_test: false
+      enable_sync: true
+      enable_restart: true
+      image_name: vlm-node-server
+      enable_sync: ${{ github.ref == 'refs/heads/main' }}
+      enable_restart: ${{ github.ref == 'refs/heads/main' }}
+      argocd_app: vlm-node
+    secrets:
+      docker_registry_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_registry_password: ${{ secrets.DOCKER_PASSWORD }}
+      argocd_host: ${{ secrets.GLOBAL_PUBLIC_ARGOCD_HOST }}
+      argocd_password: ${{ secrets.GLOBAL_PUBLIC_ARGOCD_PASSWORD }}
+
+  build-ui:
+    uses: ./.github/workflows/build-and-deploy.yml
+    with:
+      docker_context: ui
+      image_name: vlm-node-ui
+      docker_platforms: linux/amd64
+    secrets:
+      docker_registry_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_registry_password: ${{ secrets.DOCKER_PASSWORD }}
+      argocd_host: ${{ secrets.GLOBAL_PUBLIC_ARGOCD_HOST }}
+      argocd_password: ${{ secrets.GLOBAL_PUBLIC_ARGOCD_PASSWORD }}
+
+  build-worker:
+    uses: ./.github/workflows/build-and-deploy.yml
+    with:
+      docker_context: worker
+      image_name: vlm-node-worker
+      docker_platforms: linux/amd64,linux/arm64
+    secrets:
+      docker_registry_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_registry_password: ${{ secrets.DOCKER_PASSWORD }}
+      argocd_host: ${{ secrets.GLOBAL_PUBLIC_ARGOCD_HOST }}
+      argocd_password: ${{ secrets.GLOBAL_PUBLIC_ARGOCD_PASSWORD }}
+
