@@ -20,9 +20,6 @@ on:
         required: false
       argocd_app:
         type: string
-      aws_region:
-        required: true
-        type: string
       work_dir:
         type: string
         default: "."
