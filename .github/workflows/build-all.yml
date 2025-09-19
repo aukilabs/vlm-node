@@ -1,9 +1,16 @@
 name: Build All
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
       - main
+
+concurrency:
+  group: build-all-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-server:
@@ -16,8 +23,6 @@ jobs:
       enable_sync: true
       enable_restart: true
       image_name: vlm-node-server
-      enable_sync: ${{ github.ref == 'refs/heads/main' }}
-      enable_restart: ${{ github.ref == 'refs/heads/main' }}
       argocd_app: vlm-node
     secrets:
       docker_registry_username: ${{ secrets.DOCKER_USERNAME }}
