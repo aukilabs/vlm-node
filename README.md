@@ -106,23 +106,13 @@ curl http://localhost:8080/api/v1/jobs?limit=10
 
 ### Local Development
 
-#### 1. Start the Database
-```bash
-docker compose up postgres -d
-```
-
-#### 2. Start Ollama
-```bash
-docker compose up ollama -d
-```
-
-#### 3. Start the Server
+#### 1. Start the Server
 ```bash
 # start ollama for cpu only by default
 make server
 ```
 
-#### 4. Start the Worker
+#### 2. Start the Worker
 ```bash
 # start ollama for cpu only by default
 make worker
