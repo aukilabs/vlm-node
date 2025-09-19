@@ -50,7 +50,7 @@ jobs:
   test:
     name: Test
     if: ${{ inputs.enable_test }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Set up environment variables
         run: |
@@ -97,7 +97,7 @@ jobs:
   build:
     name: Build
     if: ${{ inputs.enable_build }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         platform:
