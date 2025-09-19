@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [vlm-node-server, vlm-node-worker]
+        app: [vlm-node-server, vlm-node-worker, vlm-node-ui]
       fail-fast: true
     env:
       APP: ${{ matrix.app }}
