@@ -275,22 +275,8 @@ export function sendPhotoToComputeNode(photo: PhotoData): void {
 
 ### Common Issues
 
-1. **Ollama model not found**:
-   ```bash
-   docker exec -it ollama ollama pull moondream:1.8b
-   ```
-
-2. **Database connection failed**:
-   - Check if PostgreSQL is running
-   - Verify connection string in environment variables
-
-3. **Worker not processing jobs**:
-   - Check worker logs: `docker compose logs worker`
-   - Ensure Ollama is accessible from worker container
-
-4. **UI not loading**:
-   - Check if UI container is running: `docker compose ps`
-   - Verify port 3000 is not in use
+1. **Server doesn't start**:
+   If the model is not already loaded into Ollama's memory, the server may need to pull the model first, which can take some time. To check the progress, run `docker compose logs -f ollama-cpu` and look for messages indicating that the model is being downloaded.
 
 ### Logs
 
