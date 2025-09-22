@@ -73,7 +73,7 @@ docker-cpu:
 	@docker compose up ollama-cpu server worker  -d
 
 docker-gpu:
-	@docker compose up ollama-gpu server worker -d
+	@OLLAMA_HOST=http://ollama-gpu:11434 docker compose up ollama-gpu server worker -d
 
 clean:
 	@echo "Cleaning up virtual environment and pycache..."
