@@ -269,7 +269,7 @@ jobs:
   deploy:
     name: Deploy
     needs: push
-    if: ${{ inputs.enable_sync }}
+    if: ${{ inputs.enable_sync || inputs.enable_restart }}
     runs-on: ubuntu-24.04
     steps:
       - name: Authenticate ArgoCD
