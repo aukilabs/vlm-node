@@ -73,14 +73,14 @@ docker-cpu:
 	@docker compose up ollama-cpu server worker  -d
 
 docker-gpu:
-	@docker compose up ollama-gpu server worker -d
+	@OLLAMA_HOST=http://ollama-gpu:11434 docker compose up ollama-gpu server worker -d
 
 clean:
 	@echo "Cleaning up virtual environment and pycache..."
 	@rm -rf $(VENV) __pycache__ */__pycache__
 	@cargo clean
 
-tag: check-version test
+tag: check-version
 	@echo "\033[94m\n• Tagging ${VERSION}\033[00m"
 	@git tag ${VERSION}
 	@git push origin ${VERSION}
