@@ -79,9 +79,12 @@ ui:
       cpu: "200m"
 
 # Database configuration
+# https://github.com/bitnami/charts/tree/postgresql/16.7.27/bitnami/postgresql#parameters
 postgresql:
   # If true, the PostgreSQL dependency is enabled
   enabled: false
+  image:
+    repository: bitnamilegacy/postgresql
   url: "placeholder"
   global:
     # defaultStorageClass: ""
