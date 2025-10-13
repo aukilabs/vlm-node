@@ -2,6 +2,7 @@ use actix_web::{rt, web, Error, HttpRequest, HttpResponse};
 use actix_ws::Message;
 use futures::{select, FutureExt};
 use futures_util::StreamExt as _;
+use serde_json::Value;
 use tokio::time::{self, Duration, Instant};
 
 use crate::{config, ollama_client::{send_to_ollama}};
@@ -12,10 +13,11 @@ async fn proxy_ollama_response(
     prompt: String,
     model: String,
     ollama_host: String,
+    num_predict: i32,
 ) {
     let mut session_clone = session.clone();
     rt::spawn(async move {
-        match send_to_ollama(images_batch, prompt, model, ollama_host).await {
+        match send_to_ollama(images_batch, prompt, model, ollama_host, Some(num_predict)).await {
             Ok(mut rx) => {
                 while let Some(res) = rx.next().await {
                     match res {
@@ -43,7 +45,7 @@ async fn handle_binary(
     images: &mut Vec<Vec<u8>>,
     bin: bytes::Bytes,
     session: &mut actix_ws::Session,
-    last_prompt: &Option<String>,
+    last_prompt: &Option<(String, i32)>,
     model: String,
     ollama_host: String,
     image_batch_size: usize,
@@ -51,9 +53,9 @@ async fn handle_binary(
     images.push(bin.to_vec());
 
     if images.len() >= image_batch_size {
-        if let Some(prompt) = last_prompt.clone() {
+        if let Some((prompt, num_predict)) = last_prompt.clone() {
             let images_batch = std::mem::take(images);
-            proxy_ollama_response(session, images_batch, prompt, model, ollama_host).await;
+            proxy_ollama_response(session, images_batch, prompt, model, ollama_host, num_predict).await;
         } else {
             let _ = session.text("No prompt received for image batch".to_string()).await;
         }
@@ -64,16 +66,24 @@ async fn handle_text(
     session: &mut actix_ws::Session,
     images: &mut Vec<Vec<u8>>,
     text: String,
-    last_prompt: &mut Option<String>,
+    last_prompt: &mut Option<(String, i32)>,
     model: String,
     ollama_host: String,
 ) {
-    *last_prompt = Some(text.clone());
+    let (prompt, num_predict) = if let Ok(value) = serde_json::from_str::<Value>(&text) {
+        let prompt = value["prompt"].as_str().unwrap_or(&text).to_string();
+        let num_predict = value["num_predict"].as_i64().map(|n| n as i32).unwrap_or(16);
+        (prompt, num_predict)
+    } else {
+        (text.clone(), 16)
+    };
+
+    *last_prompt = Some((prompt.clone(), num_predict));
 
     // If prompt updated, send the images to Ollama
     if !images.is_empty() {
         let images_batch = std::mem::take(images);
-        proxy_ollama_response(session, images_batch, text, model, ollama_host).await;
+        proxy_ollama_response(session, images_batch, prompt, model, ollama_host, num_predict).await;
     }
 }
 
@@ -92,7 +102,7 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
 
     rt::spawn(async move {
         let mut images: Vec<Vec<u8>> = Vec::new();
-        let mut last_prompt: Option<String> = None;
+        let mut last_prompt: Option<(String, i32)> = None;
 
         let mut inference_interval = time::interval_at(Instant::now() + Duration::from_secs(30), Duration::from_secs(10));
         inference_interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
@@ -141,9 +151,11 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
                         tracing::error!("Error sending ping: {:?}", e);
                         break;
                     }
-                    if let Some(prompt) = last_prompt.clone() {
-                        tracing::info!("Inference interval fired: running handle_text with last prompt");
-                        handle_text(&mut session, &mut images, prompt.clone(), &mut last_prompt, model.clone(), ollama_host.clone()).await;
+                    if let Some((prompt, num_predict)) = last_prompt.clone() {
+                        if !images.is_empty() {
+                            let images_batch = std::mem::take(&mut images);
+                            proxy_ollama_response(&mut session, images_batch, prompt, model.clone(), ollama_host.clone(), num_predict).await;
+                        }
                     }
                 }
             }

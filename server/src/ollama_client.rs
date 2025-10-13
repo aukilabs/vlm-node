@@ -84,6 +84,7 @@ pub async fn send_to_ollama(
     prompt: String,
     model: String,
     ollama_host: String,
+    num_predict: Option<i32>,
 ) -> Result<mpsc::Receiver<Result<Bytes, reqwest::Error>>, reqwest::Error> {
     tracing::info!("Sending images to Ollama: {:?}", images_batch.len());
     let images_b64: Vec<String> = images_batch
@@ -96,6 +97,14 @@ pub async fn send_to_ollama(
         "images": images_b64,
         "model": model.clone(),
         "stream": true,
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+        "num_predict": num_predict.unwrap_or(16),
+>>>>>>> Stashed changes
+=======
+        "num_predict": num_predict.unwrap_or(16),
+>>>>>>> Stashed changes
     });
 
     let url = format!("{}/api/generate", ollama_host);
