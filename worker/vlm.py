@@ -74,18 +74,25 @@ def parse_image_timestamp(image_path):
         return match.group('ts')
     return ""
 
-def run_inference(vlm_prompt, prompt, image_paths):
+def run_inference(vlm_prompt, prompt, image_paths, temperature: float = 0.2, num_predict: int = 16):
     start_image = None
     end_image = None
     
     # Get model names from environment variables
     vlm_model = os.environ.get("VLM_MODEL", "llava:7b")
+<<<<<<< Updated upstream
     llm_model = os.environ.get("LLM_MODEL", "llama3:latest")
     
     logger.info("Using VLM model: " + vlm_model)
     logger.info("Using LLM model: " + llm_model)
     
     # Ensure models are available
+=======
+
+    logger.info("Using VLM model: " + vlm_model + " with temperature=" + str(temperature) + " and num_predict=" + str(num_predict))
+
+    # Ensure VLM model is available
+>>>>>>> Stashed changes
     ensure_model_available(vlm_model)
     ensure_model_available(llm_model)
 
@@ -98,6 +105,13 @@ def run_inference(vlm_prompt, prompt, image_paths):
             model=vlm_model,
             prompt=vlm_prompt,
             images=[image_path],
+<<<<<<< Updated upstream
+=======
+            options={
+                "temperature": float(temperature),
+                "num_predict": num_predict
+            },
+>>>>>>> Stashed changes
         )
         results += '"' + parse_image_id(image_path) + '",' + '"' + parse_image_timestamp(image_path) + '",' + '"' + res.response + '"\n'
         logger.info("Inference output: " + str(res))
@@ -183,7 +197,12 @@ def run(conn, job, input_dir, output_dir):
         return
 
     try:
+<<<<<<< Updated upstream
         results = run_inference(inputs['vlm_prompt'], inputs['prompt'], image_paths)
+=======
+        temperature = float(inputs.get('temperature', os.environ.get("VLM_TEMPERATURE", 0.2)))
+        num_predict = int(inputs.get('num_predict', os.environ.get("VLM_NUM_PREDICT", 16)))
+        results = run_inference(inputs['vlm_prompt'], inputs['prompt'], image_paths, temperature=temperature, num_predict=num_predict)
     except Exception as e:
         logger.error("Error processing job", extra={"job_id": job['id'], "error": str(e)})
         err = {
