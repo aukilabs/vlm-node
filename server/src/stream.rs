@@ -12,10 +12,11 @@ async fn proxy_ollama_response(
     prompt: String,
     model: String,
     ollama_host: String,
+    num_predict: Option<i32>,
 ) {
     let mut session_clone = session.clone();
     rt::spawn(async move {
-        match send_to_ollama(images_batch, prompt, model, ollama_host).await {
+        match send_to_ollama(images_batch, prompt, model, ollama_host, num_predict).await {
             Ok(mut rx) => {
                 while let Some(res) = rx.next().await {
                     match res {
@@ -47,13 +48,14 @@ async fn handle_binary(
     model: String,
     ollama_host: String,
     image_batch_size: usize,
+    num_predict: Option<i32>,
 ) {
     images.push(bin.to_vec());
 
     if images.len() >= image_batch_size {
         if let Some(prompt) = last_prompt.clone() {
             let images_batch = std::mem::take(images);
-            proxy_ollama_response(session, images_batch, prompt, model, ollama_host).await;
+            proxy_ollama_response(session, images_batch, prompt, model, ollama_host, num_predict).await;
         } else {
             let _ = session.text("No prompt received for image batch".to_string()).await;
         }
@@ -67,13 +69,14 @@ async fn handle_text(
     last_prompt: &mut Option<String>,
     model: String,
     ollama_host: String,
+    num_predict: Option<i32>,
 ) {
     *last_prompt = Some(text.clone());
 
     // If prompt updated, send the images to Ollama
     if !images.is_empty() {
         let images_batch = std::mem::take(images);
-        proxy_ollama_response(session, images_batch, text, model, ollama_host).await;
+        proxy_ollama_response(session, images_batch, text, model, ollama_host, num_predict).await;
     }
 }
 
@@ -87,6 +90,19 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
     let ollama_host = vlm_config.ollama_host.clone();
     let model = vlm_config.model.clone();
     let image_batch_size = vlm_config.image_batch_size;
+
+    // Parse num_predict from query parameters
+    let num_predict = req
+        .query_string()
+        .split('&')
+        .find_map(|param| {
+            let mut parts = param.split('=');
+            if parts.next()? == "num_predict" {
+                parts.next()?.parse::<i32>().ok()
+            } else {
+                None
+            }
+        });
 
     let mut stream = stream.max_frame_size(1024*1024);
 
@@ -104,12 +120,12 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
                         Some(Ok(Message::Binary(bin))) => {
                             tracing::info!("Received binary message: {:?}", bin.len());
                             inference_interval.reset();
-                            handle_binary(&mut images, bin, &mut session, &last_prompt, model.clone(), ollama_host.clone(), image_batch_size).await;
+                            handle_binary(&mut images, bin, &mut session, &last_prompt, model.clone(), ollama_host.clone(), image_batch_size, num_predict).await;
                         }
                         Some(Ok(Message::Text(text))) => {
                             tracing::info!("Received text message: {:?}", text);
                             inference_interval.reset();
-                            handle_text(&mut session, &mut images, text.to_string(), &mut last_prompt, model.clone(), ollama_host.clone()).await;
+                            handle_text(&mut session, &mut images, text.to_string(), &mut last_prompt, model.clone(), ollama_host.clone(), num_predict).await;
                         }
                         Some(Ok(Message::Close(_))) => {
                             tracing::info!("Received close message");
@@ -143,7 +159,7 @@ pub async fn ws_index(req: HttpRequest, stream: web::Payload, vlm_config: web::D
                     }
                     if let Some(prompt) = last_prompt.clone() {
                         tracing::info!("Inference interval fired: running handle_text with last prompt");
-                        handle_text(&mut session, &mut images, prompt.clone(), &mut last_prompt, model.clone(), ollama_host.clone()).await;
+                        handle_text(&mut session, &mut images, prompt.clone(), &mut last_prompt, model.clone(), ollama_host.clone(), num_predict).await;
                     }
                 }
             }
