@@ -67,6 +67,7 @@ pub async fn pull_ollama_model(model_name: &str, ollama_host: &str) -> Result<()
             return Err(err.into());
         }
     }
+    tracing::info!("Model '{}' pulled successfully", model_name);
 
     Ok(())
 }
