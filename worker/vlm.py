@@ -74,6 +74,40 @@ def parse_image_timestamp(image_path):
         return match.group('ts')
     return ""
 
+def run_vlm_only(vlm_prompt, image_paths):
+    """
+    Run VLM inference on images without LLM temporal reasoning.
+    Returns direct VLM responses for each image.
+    """
+    vlm_model = os.environ.get("VLM_MODEL", "llava:7b")
+    
+    logger.info("Using VLM model: " + vlm_model)
+    ensure_model_available(vlm_model)
+
+    logger.info("Running VLM-only inference: image_count=" + str(len(image_paths)))
+    
+    responses = []
+    for image_path in image_paths:
+        logger.info("Processing image: " + image_path)
+        res = ollama.generate(
+            model=vlm_model,
+            prompt=vlm_prompt,
+            images=[image_path],
+        )
+        responses.append({
+            "image_id": parse_image_id(image_path),
+            "timestamp": parse_image_timestamp(image_path),
+            "response": res.response
+        })
+        logger.info("VLM output: " + res.response)
+
+    logger.info("VLM-only inference completed")
+    
+    return {
+        "responses": responses
+    }
+
+
 def run_inference(vlm_prompt, prompt, image_paths):
     start_image = None
     end_image = None
@@ -172,6 +206,10 @@ def find_images(input_dir):
 def run(conn, job, input_dir, output_dir):
     inputs = job['input']
     image_paths = find_images(input_dir)
+    
+    # Get job type from input, default to task_timing_v1 for backwards compatibility
+    job_type = inputs.get('job_type', 'task_timing_v1')
+    logger.info(f"Processing job with type: {job_type}")
 
     if len(image_paths) == 0:
         logger.warning("No images found: input_dir=" + input_dir)
@@ -183,7 +221,12 @@ def run(conn, job, input_dir, output_dir):
         return
 
     try:
-        results = run_inference(inputs['vlm_prompt'], inputs['prompt'], image_paths)
+        if job_type == 'vlm_only':
+            # Direct VLM inference without LLM temporal reasoning
+            results = run_vlm_only(inputs['vlm_prompt'], image_paths)
+        else:
+            # Default: task_timing_v1 with LLM temporal reasoning
+            results = run_inference(inputs['vlm_prompt'], inputs['prompt'], image_paths)
     except Exception as e:
         logger.error("Error processing job", extra={"job_id": job['id'], "error": str(e)})
         err = {
