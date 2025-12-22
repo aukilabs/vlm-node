@@ -81,8 +81,9 @@ class HealthHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
 def run_health_server():
-    server = HTTPServer(("0.0.0.0", 8081), HealthHandler)
-    logger.info("Health server running on port 8081")
+    port = int(os.environ.get("WORKER_HEALTH_PORT", 8082))
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    logger.info(f"Health server running on port {port}")
     server.serve_forever()
 
 if __name__ == "__main__":
