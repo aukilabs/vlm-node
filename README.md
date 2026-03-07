@@ -3,7 +3,7 @@
 VLM Node is designed to process images captured by smart glasses in retail environments. By leveraging Vision Language Models (VLM) and Large Language Models (LLM), it intelligently determines when specific tasks start and end within the store, enabling automated task tracking and analysis.
 
 ## Community
-[Discord](https://discord.gg/aukiverse)
+[Discord](https://discord.gg/auki)
 
 ## Features
 
